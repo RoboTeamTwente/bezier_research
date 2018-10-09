@@ -1,4 +1,4 @@
-clear all; clc; clf;
+clear; clc; clf;
 % This works for all orientations
 % This only works for an initial path that goes between the centers of two 
 % overlapping obstacles
@@ -19,41 +19,53 @@ orientationMargin=20; % distance for the orientation control point
 ptStart=[5 5]; % start position
 ptEnd=[100 100]; % ball position
 ptGoal=[110 130]; % point where the ball should go to
-
-% Random number stuff
-% a=ptStart(1)-10; b=ptEnd(1);
-% ptObject=[rand(1,2);rand(1,2)]*(b-a)-15;
-
 ptObject=[60 30; 20 50]; % objects that are in the way
 [nObstacles,~]=size(ptObject);
+
+% State variables
+initVel = 0;
+initAng = 0.5*pi;
+finalVel = 0;
+finalAng = atan2(ptGoal(2)-ptEnd(2), ptGoal(1)-ptEnd(1));
+orientDist = 20; % could be used to limit the angular velocity, for now to make the graph more pretty
+
  
-%% Orientation points
-h=orientationMargin*sin(startOrientationAngle);
-l=orientationMargin*cos(startOrientationAngle);
-ptStartOrientation=[ptStart(1)+l, ptStart(2)+h];
+%% Set initial and final states
+if round(initVel) == 0 % Should be limited and not rounded
+    ptInitState = ptStart + orientDist*[0, 0; cos(initAng), sin(initAng)];
+else
+    NumPoints = 4; % Start, initial state, inter continuity, inter
+    ptInitState = ptStart + initVel/(NumPoints-1)*[cos(initAng), sin(initAng)];
+end
 
-endOrientationDistance=sqrt((ptGoal(1)-ptEnd(1))^2+(ptGoal(2)-ptEnd(2))^2)+orientationMargin;
-endOrientationAngle=atan(abs((ptGoal(2)-ptEnd(2)))/abs((ptGoal(1)-ptEnd(2))));
-
-ptEndOrientation=ptEnd+(ptGoal-ptEnd)*[cos(pi), -sin(pi); sin(pi), cos(pi)];
+if round(finalVel) == 0 % Should be limited and not rounded
+    ptFinalState = ptEnd + orientDist*[cos(pi-finalAng), -sin(pi-finalAng); 0, 0];
+else
+    NumPoints = 4; % Start, initial state, inter continuity, inter
+    ptFinalState = ptEnd + finalVel/(NumPoints-1)*[cos(pi-finalAng), -sin(pi-finalAng)];
+end
 
 %% Initial path
-pts=[ptStart; ptStartOrientation; ptEndOrientation; ptEnd];
+pts=[ptStart; ptInitState; ptFinalState; ptEnd];
 [initX, initY]=bezierCurve(pts, dt);
 ptDanger=findDanger(ptObject, initX, initY, minRadius); % check if circle crosses path
 [nDanger,~]=size(ptDanger); % amount of danger points
 
 %% Points of first half of path
-ptInter=createInter(nDanger, ptDanger, ptStart, ptEnd, minRadius, ptStartOrientation);
+ptInter=createInter(nDanger, ptDanger, ptStart, ptEnd, minRadius, ptInitState);
 
-pts=[ptStart; ptStartOrientation; ptInter];
+pts=[ptStart; ptInitState; ptInter];
 [firstX, firstY]=bezierCurve(pts, dt);
 [ptInterObject]=findDanger(ptDanger, firstX, firstY, minRadius);
 [ptControl]=createCP(ptInterObject, firstX, firstY, minRadius);
-ptsFirst=[ptStart; ptStartOrientation; ptControl; ptInter];
+if round(initVel) > 0 && ~isempty(ptControl) % Should be limited and not rounded
+    NumPoints = 4 + length(ptControl(:,1)); % Same as before + number of control points
+    ptInitState = ptStart + initVel/(NumPoints-1)*[cos(initAng), sin(initAng)];
+end
+ptsFirst=[ptStart; ptInitState; ptControl; ptInter];
 
 % Points of second half of path
-ptsSecond=[ptInter; ptEndOrientation; ptEnd];
+ptsSecond=[ptInter; ptFinalState; ptEnd];
 
 % Bezier curves
 % Calculate points on both sides of Inter Point to assure continuity
@@ -102,7 +114,7 @@ end
 if ~isempty(ptControl)
     plot(ptControl(:,1),ptControl(:,2),'b*')
 end
-plot([ptStartOrientation(1),ptEndOrientation(1)],[ptStartOrientation(2),ptEndOrientation(2)],'m*');
+plot([ptInitState(2,1), ptInterOrientation1(1), ptInterOrientation2(1), ptFinalState(1,1)],[ptInitState(2,2), ptInterOrientation1(2), ptInterOrientation2(2), ptFinalState(1,2)],'m*');
 plot(ptGoal(1),ptGoal(2),'c*');
 if ~isempty(ptObject)
     plot(ptObject(:,1),ptObject(:,2),'k*')
@@ -162,8 +174,9 @@ for i = 0:n
 end
 end
 
-function [ptInter]=createInter(nDanger, obj, ptStart, ptEnd, minRadius, ptStartOrientation)
+function [ptInter]=createInter(nDanger, obj, ptStart, ptEnd, minRadius, ptInitState)
 % Decide whether to go left or right past objects
+ptStartOrientation = ptInitState(end,:);
 startToObj=ones(nDanger,2); angToObj=ones(nDanger,2); dist=ones(nDanger,2);
 
 startToOr=ptStartOrientation-ptStart;
