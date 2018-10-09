@@ -1,4 +1,4 @@
-% clear all; clc; close all;
+clear all; clc; close all;
 % This works for all orientations
 % This only works for an initial path that goes between the centers of two 
 % overlapping obstacles
@@ -22,8 +22,9 @@ ptGoal=[110 130]; % point where the ball should go to
 
 % Random number stuff
 a=ptStart(1)-10; b=ptEnd(1);
-% ptObject=[rand(1,2);rand(1,2)]*(b-a)+ptStart(1);
-ptObject=[rand(1,1) rand(1,1)]*(b-a)+ptStart(1);
+ptObject=[rand(1,2);rand(1,2)]*(b-a)+5;
+
+% ptObject=[60 30; 20 50]; % objects that are in the way
 [nObstacles,~]=size(ptObject);
  
 %% Orientation points
@@ -44,12 +45,10 @@ ptDanger=findDanger(ptObject, initX, initY, minRadius); % check if circle crosse
 
 %% Points of first half of path
 if nDanger==0
-    ptInter=[]; ptControl=[]; % for plotting purposes
     V=getVelocity(pts, dt);
     ang=getRotation(V);
     angVel=diff(ang)/dt;
-    X=initX;
-    Y=initY;
+    
 else
     ptInter=createInter(nDanger, ptDanger, ptStart, ptEnd, minRadius, ptStartOrientation);
     pts=[ptStart; ptStartOrientation; ptInter];
@@ -92,59 +91,59 @@ else
     V=[firstV, secondV];
     ang=[firstAng, secondAng];
     angVel=diff(ang)/dt;
-end
 
-%% Visuals
-figure(1)
-set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
-subplot(2,3,[1,2,4,5])
-hold on
-plot(X, Y, '--', 'color', [0.6, 0.6, 0.6])
-plot(ptStart(1),ptStart(2),'g*');
-plot(ptEnd(1),ptEnd(2),'r*');
-if ~isempty(ptInter)
-    plot(ptInter(1),ptInter(2),'*','color',[1 0.5 0])
-end
-if ~isempty(ptControl)
-    plot(ptControl(:,1),ptControl(:,2),'b*')
-end
-plot([ptStartOrientation(1),ptEndOrientation(1)],[ptStartOrientation(2),ptEndOrientation(2)],'m*');
-plot(ptGoal(1),ptGoal(2),'c*');
-if ~isempty(ptObject)
-    plot(ptObject(:,1),ptObject(:,2),'k*')
-    circlesX = ptObject(:,1)*ones(1,100) + ones(nObstacles,1)*minRadius*cos(linspace(0,2*pi,100));
-    circlesY = ptObject(:,2)*ones(1,100) + ones(nObstacles,1)*minRadius*sin(linspace(0,2*pi,100));
-    plot(circlesX, circlesY, '.k', 'MarkerSize', 2)
-end
-ylim([-50 ptGoal(2)+50]); xlim([-50 ptGoal(1)+20]);
-grid on
-axis equal
-if ~isempty(ptControl)
-    legend('Path', 'Start point', 'End Point', 'Intermediate point', 'Control Points', 'Orientation points', 'Goal', 'Objects', 'location', 'best')
-else
-    legend('Path', 'Start point', 'End Point', 'Intermediate point', 'Orientation points', 'Goal', 'Objects', 'location', 'best')
-end
-hold off
+    %% Visuals
+    figure(1)
+    set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
+    subplot(2,3,[1,2,4,5])
+    hold on
+    plot(X, Y, '--', 'color', [0.6, 0.6, 0.6])
+    plot(ptStart(1),ptStart(2),'g*');
+    plot(ptEnd(1),ptEnd(2),'r*');
+    if ptInter(1)~=0 && ptInter(2)~=0
+        plot(ptInter(1),ptInter(2),'*','color',[1 0.5 0])
+    end
+    if ~isempty(ptControl)
+        plot(ptControl(:,1),ptControl(:,2),'b*')
+    end
+    plot([ptStartOrientation(1),ptEndOrientation(1)],[ptStartOrientation(2),ptEndOrientation(2)],'m*');
+    plot(ptGoal(1),ptGoal(2),'c*');
+    if ~isempty(ptObject)
+        plot(ptObject(:,1),ptObject(:,2),'k*')
+        circlesX = ptObject(:,1)*ones(1,100) + ones(nObstacles,1)*minRadius*cos(linspace(0,2*pi,100));
+        circlesY = ptObject(:,2)*ones(1,100) + ones(nObstacles,1)*minRadius*sin(linspace(0,2*pi,100));
+        plot(circlesX, circlesY, '.k', 'MarkerSize', 2)
+    end
+    ylim([-50 ptGoal(2)+50]); xlim([-50 ptGoal(1)+20]);
+    grid on
+    axis equal
+    if ~isempty(ptControl)
+        legend('Path', 'Start point', 'End Point', 'Intermediate point', 'Control Points', 'Orientation points', 'Goal', 'Objects', 'location', 'best')
+    else
+        legend('Path', 'Start point', 'End Point', 'Intermediate point', 'Orientation points', 'Goal', 'Objects', 'location', 'best')
+    end
+    hold off
 
-subplot(2,3,3)
-T = linspace(0,2,length(V));
-plot(T,V(1,:),T,V(2,:),T,sqrt(V(1,:).^2 + V(2,:).^2))
-grid on
-xlabel('Normalized time')
-ylabel('Velocity')
-legend('V_x','V_y','V_t_o_t')
+    subplot(2,3,3)
+    T = linspace(0,2,length(V));
+    plot(T,V(1,:),T,V(2,:),T,sqrt(V(1,:).^2 + V(2,:).^2))
+    grid on
+    xlabel('Normalized time')
+    ylabel('Velocity')
+    legend('V_x','V_y','V_t_o_t')
 
-% subplot(2,3,5)
-% plot(T,ang);
-% grid on
-% xlabel('Normalized time')
-% ylabel('Angle [rad]')
+    % subplot(2,3,5)
+    % plot(T,ang);
+    % grid on
+    % xlabel('Normalized time')
+    % ylabel('Angle [rad]')
 
-subplot(2,3,6)
-plot(T(2:end),angVel);
-grid on
-xlabel('Normalized time')
-ylabel('Angular velocity [rad/(a.u.)]')
+    subplot(2,3,6)
+    plot(T(2:end),angVel);
+    grid on
+    xlabel('Normalized time')
+    ylabel('Angular velocity [rad/(a.u.)]')
+end
 
 %% Functions
 function [X, Y] = bezierCurve(P, dt)
@@ -173,7 +172,9 @@ startToObj=ones(nDanger,2); angToObj=ones(nDanger,2); dist=ones(nDanger,2);
 
 startToOr=ptStartOrientation-[ptStart(1), ptEnd(1)];
 startToOr=startToOr/norm(startToOr);
-if nDanger==1
+if nDanger==0
+    return;
+elseif nDanger==1
     ang=90-(180-90-atan(obj(2)/obj(1)));
     ptInter=[obj(1)+sin(ang)*minRadius obj(2)+cos(ang)*minRadius]; % should be better
 elseif nDanger==2
