@@ -18,7 +18,7 @@ orientationMargin=20; % distance for the orientation control point
 ptStart=[5 5]; % start position
 ptEnd=[100 100]; % ball position
 ptGoal=[110 130]; % point where the ball should go to
-ptObject=[60 30; 20 50]; % objects that are in the way
+ptObject=[65 45; 50 90]; % objects that are in the way
 [nObstacles,~]=size(ptObject);
 
 % State variables
@@ -251,6 +251,7 @@ elseif length(obj(:,1))==1
         return;
     end
 elseif length(obj(:,1))==2
+    disp('wut, make an inter point man')
     if norm(obj(1,:)-obj(2,:))<2*minRadius
         % If their circles are overlapping
         % Decide whether to go left or right past the 2 objects
@@ -303,7 +304,9 @@ for i=1:length(obj(:,1))
         for j=1:length(obj(:,1))
             if i~=j && norm(obj(i,:)-obj(j,:))<2*minRadius
                 for k=1:length(BZ_X)
-                    if dot(obj(i,:)-[BZ_X(k), BZ_Y(k)], obj(j,:)-[BZ_X(k), BZ_Y(k)])<-0.95
+                    pathToObj1 = (obj(i,:)-[BZ_X(k), BZ_Y(k)])/norm(obj(i,:)-[BZ_X(k), BZ_Y(k)]);
+                    pathToObj2 = (obj(j,:)-[BZ_X(k), BZ_Y(k)])/norm(obj(j,:)-[BZ_X(k), BZ_Y(k)]);
+                    if dot(pathToObj1, pathToObj2)<-0.95
                         dangerous=[dangerous; obj(j,:)];
                     end
                 end
@@ -340,7 +343,7 @@ dYdT(end) = dYdT(end-1) + (dYdT(end-1)-dYdT(end-2));
 V=[dXdT; dYdT];
 end
 
-function [A] = getAcceleration(P, dt)
+function [A]=getAcceleration(P, dt)
 T = 0:dt:1;
 d2XdT2 = zeros(1,length(T));
 d2YdT2 = zeros(1,length(T));
