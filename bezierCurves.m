@@ -1,4 +1,4 @@
-% clear all; clc; close all;
+clear all; clc; close all;
 % This works for all orientations
 % This only works for an initial path that goes between the centers of two 
 % overlapping obstacles
@@ -20,11 +20,17 @@ ptStart=[5 5]; % start position
 ptEnd=[100 100]; % ball position
 ptGoal=[110 130]; % point where the ball should go to
 
-% Random number stuff
-a=ptStart(1)-10; b=ptEnd(1);
-% ptObject=[rand(1,2);rand(1,2)]*(b-a)+ptStart(1);
-ptObject=[rand(1,1) rand(1,1)]*(b-a)+ptStart(1);
-[nObstacles,~]=size(ptObject);
+choice=menu('Amount of objects','1','2','3');
+a=ptStart(1)-10; b=ptEnd(1)-10;
+if choice==1
+    ptObject=[rand(1,1) rand(1,1)]*(b-a)+ptStart(1);
+elseif choice==2
+    ptObject=[rand(1,2);rand(1,2)]*(b-a)+ptStart(1);
+else
+    ptObject=[rand(1,2); rand(1,2); rand(1,2)]*(b-a)+ptStart(1);
+end
+[nObjects,~]=size(ptObject);
+
  
 %% Orientation points
 h=orientationMargin*sin(startOrientationAngle);
@@ -112,15 +118,15 @@ plot([ptStartOrientation(1),ptEndOrientation(1)],[ptStartOrientation(2),ptEndOri
 plot(ptGoal(1),ptGoal(2),'c*');
 if ~isempty(ptObject)
     plot(ptObject(:,1),ptObject(:,2),'k*')
-    circlesX = ptObject(:,1)*ones(1,100) + ones(nObstacles,1)*minRadius*cos(linspace(0,2*pi,100));
-    circlesY = ptObject(:,2)*ones(1,100) + ones(nObstacles,1)*minRadius*sin(linspace(0,2*pi,100));
+    circlesX = ptObject(:,1)*ones(1,100) + ones(nObjects,1)*minRadius*cos(linspace(0,2*pi,100));
+    circlesY = ptObject(:,2)*ones(1,100) + ones(nObjects,1)*minRadius*sin(linspace(0,2*pi,100));
     plot(circlesX, circlesY, '.k', 'MarkerSize', 2)
 end
 ylim([-50 ptGoal(2)+50]); xlim([-50 ptGoal(1)+20]);
 grid on
 axis equal
 if ~isempty(ptControl)
-    legend('Path', 'Start point', 'End Point', 'Intermediate point', 'Control Points', 'Orientation points', 'Goal', 'Objects', 'location', 'best')
+    legend('Path', 'Start point', 'End Point', 'Control Points', 'Orientation points', 'Goal', 'Objects', 'location', 'best')
 else
     legend('Path', 'Start point', 'End Point', 'Intermediate point', 'Orientation points', 'Goal', 'Objects', 'location', 'best')
 end
