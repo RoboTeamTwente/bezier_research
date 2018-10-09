@@ -5,7 +5,6 @@ clear; clc; clf;
 % Start and end points cannot be too close to the obstacles
 
 % TODO: take in account physical limitations
-% TODO: set initial velocity to zero
 % TODO: multiple opponents in different configurations
 % TODO: take into consideration orientation of opponent? (nice addition
 % maybe)
@@ -92,11 +91,11 @@ firstAng=getRotation(firstV);
 secondV=getVelocity(ptsSecond, dt);
 secondAng=getRotation(secondV);
 
-% Combine halfs
-X=[firstX, secondX];
-Y=[firstY, secondY];
-V=[firstV, secondV];
-ang=[firstAng, secondAng];
+% Combine halfs -- note that the halfs have 1 common point
+X = [firstX, secondX(2:end)];
+Y = [firstY, secondY(2:end)];
+V = [firstV, secondV(:,2:end)];
+ang = [firstAng, secondAng(2:end)];
 angVel=diff(ang)/dt;
 
 
@@ -139,12 +138,6 @@ grid on
 xlabel('Normalized time')
 ylabel('Velocity')
 legend('V_x','V_y','V_t_o_t','location','best')
-
-% subplot(2,3,5)
-% plot(T,ang);
-% grid on
-% xlabel('Normalized time')
-% ylabel('Angle [rad]')
 
 subplot(2,3,6)
 plot(T(2:end),angVel);
@@ -320,6 +313,12 @@ for i=0:n
     dYdT=dYdT+nchoosek(n,i)*(i*T.^(i-1).*(1-T).^(n-i)+T.^i.*-(n-i).*(1-T).^(n-i-1))*P(i+1,2);
 end
 
+% Fix NaN data by extrapolation
+dXdT(1) = dXdT(2) - (dXdT(3)-dXdT(2));
+dXdT(end) = dXdT(end-1) + (dXdT(end-1)-dXdT(end-2));
+dYdT(1) = dYdT(2) - (dYdT(3)-dYdT(2));
+dYdT(end) = dYdT(end-1) + (dYdT(end-1)-dYdT(end-2));
+
 V=[dXdT; dYdT];
 end
 
@@ -333,4 +332,8 @@ for i=1:length(V(1,:))
         ang(i)=ang(i)+pi;
     end
 end
+
+% Fix NaN data by extrapolation
+ang(1) = ang(2) - (ang(3)-ang(2));
+ang(end) = ang(end-1) + (ang(end-2)-ang(end-3));
 end
