@@ -1,4 +1,4 @@
-clear all; clc; close all;
+clear all; clc; clf;
 % This works for all orientations
 % This only works for an initial path that goes between the centers of two 
 % overlapping obstacles
@@ -21,10 +21,10 @@ ptEnd=[100 100]; % ball position
 ptGoal=[110 130]; % point where the ball should go to
 
 % Random number stuff
-a=ptStart(1)-10; b=ptEnd(1);
-ptObject=[rand(1,2);rand(1,2)]*(b-a)+5;
+% a=ptStart(1)-10; b=ptEnd(1);
+% ptObject=[rand(1,2);rand(1,2)]*(b-a)-15;
 
-% ptObject=[60 30; 20 50]; % objects that are in the way
+ptObject=[60 30; 20 50]; % objects that are in the way
 [nObstacles,~]=size(ptObject);
  
 %% Orientation points
@@ -90,7 +90,7 @@ angVel=diff(ang)/dt;
 
 %% Visuals
 figure(1)
-set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
+%set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
 subplot(2,3,[1,2,4,5])
 hold on
 plot(X, Y, '--', 'color', [0.6, 0.6, 0.6])
@@ -126,7 +126,7 @@ plot(T,V(1,:),T,V(2,:),T,sqrt(V(1,:).^2 + V(2,:).^2))
 grid on
 xlabel('Normalized time')
 ylabel('Velocity')
-legend('V_x','V_y','V_t_o_t')
+legend('V_x','V_y','V_t_o_t','location','best')
 
 % subplot(2,3,5)
 % plot(T,ang);
@@ -166,13 +166,13 @@ function [ptInter]=createInter(nDanger, obj, ptStart, ptEnd, minRadius, ptStartO
 % Decide whether to go left or right past objects
 startToObj=ones(nDanger,2); angToObj=ones(nDanger,2); dist=ones(nDanger,2);
 
-startToOr=ptStartOrientation-[ptStart(1), ptEnd(1)];
+startToOr=ptStartOrientation-ptStart;
 startToOr=startToOr/norm(startToOr);
 for i=1:nDanger
-    startToObj(i,:)=obj(i,:)-[ptStart(1), ptEnd(1)];
+    startToObj(i,:)=obj(i,:)-ptStart;
     startToObj(i,:)=startToObj(i,:)/norm(startToObj(i,:));
     angToObj(i)=acos(dot(startToOr, startToObj(i,:)));
-    dist(i)=sqrt((norm([ptStart(end), ptEnd(end)]-obj(i,:)))^2-minRadius^2);
+    dist(i)=sqrt((norm(ptEnd-obj(i,:)))^2-minRadius^2);
 end
 if nDanger==0
     return;
@@ -183,14 +183,14 @@ elseif nDanger==2
     if  angToObj(1) < angToObj(2)
         % It's faster to go past object 1
         % Construct intermediary point
-        if atan((obj(1,2)-ptEnd(end))/(obj(1,1)-ptStart(end))) > atan((obj(2,2)-ptEnd(end))/(obj(2,1)-ptStart(end)))
+        if atan((obj(1,2)-ptEnd(2))/(obj(1,1)-ptEnd(1))) > atan((obj(2,2)-ptEnd(2))/(obj(2,1)-ptEnd(1)))
             or=-1;
         else
             or=1;
         end
-        selfToObject=obj(1,:)-[ptStart(end), ptEnd(end)];
+        selfToObject=obj(1,:)-ptEnd;
         ang=or*atan(minRadius/dist(1));
-        ptInter=[ptStart(end), ptEnd(end)]+dist(1)*selfToObject/norm(selfToObject)*[cos(ang), -sin(ang); sin(ang), cos(ang)];
+        ptInter=ptEnd+dist(1)*selfToObject/norm(selfToObject)*[cos(ang), -sin(ang); sin(ang), cos(ang)];
     else
         % It's faster to go past object 2
         % Construct intermediary point
@@ -199,9 +199,9 @@ elseif nDanger==2
         else
             or=-1;
         end
-        selfToObject=obj(2,:)-[ptStart(end), ptEnd(end)];
+        selfToObject=obj(2,:)-ptEnd;
         ang=or*atan(minRadius/dist(2));
-        ptInter=[ptStart(end), ptEnd(end)]+dist(2)*selfToObject/norm(selfToObject)*[cos(ang), -sin(ang); sin(ang), cos(ang)];
+        ptInter=ptEnd+dist(2)*selfToObject/norm(selfToObject)*[cos(ang), -sin(ang); sin(ang), cos(ang)];
     end
 elseif nDanger>2
     disp('More than 2 objects????? I dont know man');
