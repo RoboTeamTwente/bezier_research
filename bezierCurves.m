@@ -1,4 +1,4 @@
-clear; clc; clf;
+clear; clc; clf(1); clf(2);
 % This works for all orientations
 % This only works for an initial path that goes between the centers of two 
 % overlapping obstacles
@@ -87,14 +87,17 @@ ptsSecond=[ptsSecond(1,:); ptInterOrientation2; ptsSecond(2:end,:)];
 %% Other stuff
 % Calculate data for analysis
 firstV=getVelocity(ptsFirst, dt);
+firstA=getAcceleration(ptsFirst, dt);
 firstAng=getRotation(firstV);
 secondV=getVelocity(ptsSecond, dt);
+secondA=getAcceleration(ptsSecond, dt);
 secondAng=getRotation(secondV);
 
 % Combine halfs -- note that the halfs have 1 common point
 X = [firstX, secondX(2:end)];
 Y = [firstY, secondY(2:end)];
 V = [firstV, secondV(:,2:end)];
+A = [firstA, secondA(:,2:end)];
 ang = [firstAng, secondAng(2:end)];
 angVel=diff(ang)/dt;
 
@@ -140,10 +143,25 @@ ylabel('Velocity')
 legend('V_x','V_y','V_t_o_t','location','best')
 
 subplot(2,3,6)
+plot(T,A(1,:),T,A(2,:),T,sqrt(A(1,:).^2 + A(2,:).^2))
+grid on
+xlabel('Normalized time')
+ylabel('Acceleration')
+legend('A_x','A_y','A_t_o_t','location','best')
+
+figure(2)
+subplot(1,2,1)
+plot(T,ang);
+grid on
+xlabel('Normalized time')
+ylabel('Angle [rad]')
+
+subplot(1,2,2)
 plot(T(2:end),angVel);
 grid on
 xlabel('Normalized time')
 ylabel('Angular velocity [rad/(a.u.)]')
+
 
 
 %% Functions
@@ -320,6 +338,32 @@ dYdT(1) = dYdT(2) - (dYdT(3)-dYdT(2));
 dYdT(end) = dYdT(end-1) + (dYdT(end-1)-dYdT(end-2));
 
 V=[dXdT; dYdT];
+end
+
+function [A] = getAcceleration(P, dt)
+T = 0:dt:1;
+d2XdT2 = zeros(1,length(T));
+d2YdT2 = zeros(1,length(T));
+
+if isempty(P)
+    disp('Please insert control points!');
+    return;
+end
+
+n = length(P(:,1)) - 1; % degree of polynomial
+
+for i = 0:n
+    d2XdT2 = d2XdT2 + nchoosek(n,i) * (i*(i-1)*T.^(i-2).*(1-T).^(n-i) - 2*i*(n-i)*T.^(i-1).*(1-T).^(n-i-1) + (n-i)*(n-i-1)*T.^i.*(1-T).^(n-i-2)) * P(i+1,1);
+    d2YdT2 = d2YdT2 + nchoosek(n,i) * (i*(i-1)*T.^(i-2).*(1-T).^(n-i) - 2*i*(n-i)*T.^(i-1).*(1-T).^(n-i-1) + (n-i)*(n-i-1)*T.^i.*(1-T).^(n-i-2)) * P(i+1,2);
+end
+
+% Fix NaN data by extrapolation
+d2XdT2(1) = d2XdT2(2) - (d2XdT2(3)-d2XdT2(2));
+d2XdT2(end) = d2XdT2(end-1) + (d2XdT2(end-1)-d2XdT2(end-2));
+d2YdT2(1) = d2YdT2(2) - (d2YdT2(3)-d2YdT2(2));
+d2YdT2(end) = d2YdT2(end-1) + (d2YdT2(end-1)-d2YdT2(end-2));
+
+A = [d2XdT2; d2YdT2];
 end
 
 function [ang]=getRotation(V)
