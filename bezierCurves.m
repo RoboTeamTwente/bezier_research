@@ -1,31 +1,42 @@
-clear; clc; close all;
+clear; clc; clf(1);
 % The purpose of this file is to make the planned path responsive to moving
 % obstacles. Only for 1 obstacle atm.
 
 %% Set variables
 robotRadius = 10;
-updateTimes = 50; % number of time steps between 2 plot updates
+updateTimes = 10; % number of time steps between 2 plot updates
+predict_dt = 20; % number of time steps you look ahead to predict obstacle's position
 
-dt = 1/2000; % normalized time step
+dt = 1/500; % normalized time step
 minRadius=30; % circle around object
+maxVel = 200; % maximum velocity of the robot
 ptStart=[5 5]; % start position
 ptEnd=[100 100]; % ball position
-ptGoal=[130 80]; % point where the ball should go to
-ptObject=[60 65]; % objects that are in the way
+ptGoal=[130 100]; % point where the ball should go to
+ptObject=[0 100]; % objects that are in the way
+velObject=[150 -80]; % velocity of objects
 [nObstacles,~]=size(ptObject);
 
 % State variables
 initVel = 0;
-initAng = -0.3*pi;
+initAng = 0.5*pi;
 finalVel = 0;
 finalAng = atan2(ptGoal(2)-ptEnd(2), ptGoal(1)-ptEnd(1));
-orientDist = 30; % could be used to limit the angular velocity, for now to make the graph more pretty
+orientDist = robotRadius; % could be used to limit the angular velocity, for now to make the graph more pretty
 
 %% SIMULATION: Initialize
 self = struct('X',[],'Y',[],'W',[]);
 obst = struct('X',[],'Y',[],'W',[]);
+dangerZone = struct('X',[],'Y',[]);
 
-figure
+obst.X = ptObject(:,1);
+obst.Y = ptObject(:,2);
+obst.W = atan(velObject(2)/velObject(1));
+
+dangerZone.X = obst.X + velObject(:,1)*predict_dt*dt;
+dangerZone.Y = obst.Y + velObject(:,2)*predict_dt*dt;
+
+figure(1)
 hold on
 grid on
 xlim([ptStart(1)-4*robotRadius, ptEnd(1)+4*robotRadius]);
@@ -45,21 +56,21 @@ if ~isempty(ptObject)
     for j = 1:length(ptObject(:,1))
         obstPosHandle(j) = rectangle('Position', [ptObject(j,1)-robotRadius, ptObject(j,2)-robotRadius, 2*robotRadius, 2*robotRadius], 'Curvature', [1, 1], 'FaceColor', 'b');
         obstDirHandle(j) = quiver(0,0,robotRadius*cos(0),robotRadius*sin(0), 'linewidth', 5,'color',[1 0.5 0]);
+        obstZoneHandle(j) = rectangle('Position', [dangerZone.X-minRadius, dangerZone.Y-minRadius, 2*minRadius, 2*minRadius], 'Curvature', [1, 1], 'EdgeColor', 'r', 'LineStyle', '--');
     end
 end
 
 %% Go from state to state
-makeNewPath = true;
+firstTime = true;
 count = 0;
-time = 1;
 while true
     %% Check if goal is reached
-    if ~isempty(self.X) && self.X(time) == ptEnd(1) && self.Y(time) == ptEnd(2)
+    if ~isempty(self.X) && self.X(1) == ptEnd(1) && self.Y(1) == ptEnd(2)
         disp('Goal reached!');
         break;
     end
     
-    if makeNewPath
+    if firstTime || nDanger > 0
         %% Set initial and final states
         if round(initVel) == 0 % Should be limited and not rounded
             ptInitState = ptStart + orientDist*[0, 0; cos(initAng), sin(initAng)];
@@ -78,7 +89,7 @@ while true
         %% Initial path
         pts=[ptStart; ptInitState; ptFinalState; ptEnd];
         [X, Y]=bezierCurve(pts, dt);
-        ptDanger=findDanger(ptObject, X, Y, minRadius); % check if circle crosses path
+        ptDanger=findDanger([dangerZone.X, dangerZone.Y], X, Y, minRadius); % check if circle crosses path
         [nDanger,~]=size(ptDanger); % amount of danger points
         
         if nDanger > 0
@@ -92,25 +103,17 @@ while true
             
             %% Calculate new Bezier Curve
             [X, Y]=bezierCurve(pts, dt);
-            
-            %makeNewPath = true;
-            makeNewPath = false;
-        else
-            makeNewPath = false;
         end
         
         %% Movement data
         V=getVelocity(pts, dt);
-        A=getAcceleration(pts, dt);
+        %A=getAcceleration(pts, dt);
         ang=getRotation(V);
-        angVel=diff(ang)/dt;
+        %angVel=diff(ang)/dt;
         
         self.X = X; self.Y = Y; self.W = ang;
-        obst.X = ptObject(:,1)*ones(1,length(self.X));
-        obst.Y = ptObject(:,2)*ones(1,length(self.X));
-        obst.W = zeros(1,length(self.X));
         
-        time = 1; % reset time every new path
+        firstTime = false;
     end
     
     %% SIMULATION: Update
@@ -118,31 +121,48 @@ while true
         % Self
         selfPathHandle.XData = self.X;
         selfPathHandle.YData = self.Y;
-        selfPosHandle.Position = [self.X(time)-robotRadius, self.Y(time)-robotRadius, 2*robotRadius, 2*robotRadius];
-        selfDirHandle.XData = self.X(time);
-        selfDirHandle.YData = self.Y(time);
-        selfDirHandle.UData = robotRadius*cos(self.W(time));
-        selfDirHandle.VData = robotRadius*sin(self.W(time));
+        selfPosHandle.Position = [self.X(1)-robotRadius, self.Y(1)-robotRadius, 2*robotRadius, 2*robotRadius];
+        selfDirHandle.XData = self.X(1);
+        selfDirHandle.YData = self.Y(1);
+        selfDirHandle.UData = robotRadius*cos(self.W(1));
+        selfDirHandle.VData = robotRadius*sin(self.W(1));
         
         % Obstacles
         if ~isempty(obst.X)
-            for j = 1:length(obst.X(:,1))
-                obstPosHandle(j).Position = [obst.X(j,time)-robotRadius, obst.Y(j,time)-robotRadius, 2*robotRadius, 2*robotRadius];
-                obstDirHandle(j).XData = obst.X(j,time);
-                obstDirHandle(j).YData = obst.Y(j,time);
-                obstDirHandle(j).UData = robotRadius*cos(obst.W(j,time));
-                obstDirHandle(j).VData = robotRadius*sin(obst.W(j,time));
+            for j = 1:length(obst.X)
+                obstPosHandle(j).Position = [obst.X(j)-robotRadius, obst.Y(j)-robotRadius, 2*robotRadius, 2*robotRadius];
+                obstDirHandle(j).XData = obst.X(j);
+                obstDirHandle(j).YData = obst.Y(j);
+                obstDirHandle(j).UData = robotRadius*cos(obst.W(j));
+                obstDirHandle(j).VData = robotRadius*sin(obst.W(j));
+                obstZoneHandle(j).Position = [dangerZone.X(j)-minRadius, dangerZone.Y(j)-minRadius, 2*minRadius, 2*minRadius];
             end
         end
         drawnow;
     end
     
     %% Replace initial data with current data
-    initVel = norm(V(:,time));
-    initAng = self.W(time);
-    ptStart = [self.X(time), self.Y(time)];
+    initVel = norm(V(:,1));
+    if initVel > maxVel
+        initVel = maxVel;
+    end
+    initVel
+    initAng = self.W(1);
+    ptStart = [self.X(1), self.Y(1)];
     
-    time = time + 1;
+    %% Update object positions
+    obst.X = obst.X + velObject(:,1)*dt;
+    obst.Y = obst.Y + velObject(:,2)*dt;
+    dangerZone.X = obst.X + velObject(:,1)*predict_dt*dt;
+    dangerZone.Y = obst.Y + velObject(:,2)*predict_dt*dt;
+    
+    %% Remove first data point, since it has already passed that
+    self.X(1)=[]; self.Y(1)=[]; self.W(1)=[]; V(:,1) = [];
+    
+    %% Check if there is danger now
+    ptDanger=findDanger([dangerZone.X, dangerZone.Y], X, Y, minRadius); % check if circle crosses path
+    [nDanger,~]=size(ptDanger); % amount of danger points
+    
     count = count + 1;
 end
 
