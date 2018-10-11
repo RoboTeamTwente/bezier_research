@@ -4,7 +4,7 @@ clear; clc; clf(1);
 
 %% Set variables
 robotRadius = 10;
-updateTimes = 30; % number of time steps between 2 plot updates
+updateTimes = 10; % number of time steps between 2 plot updates
 predict_dt = 50; % number of time steps you look ahead to predict obstacle's position
 posMargin = 1; % max distance to ptEnd
 angMargin = pi/50; % max difference in angle.
@@ -12,16 +12,16 @@ angMargin = pi/50; % max difference in angle.
 dt = 1/1000; % normalized time step
 minRadius=30; % circle around object
 maxVel = 200; % maximum velocity of the robot
-ptStart=[5 5]; % start position
+ptStart=[0 0]; % start position
 ptEnd=[100 100]; % ball position
-ptGoal=[130 100]; % point where the ball should go to
+ptGoal=[130 130]; % point where the ball should go to
 ptObject=[0 100]; % objects that are in the way
 velObject=[150 -80]; % velocity of objects
 [nObstacles,~]=size(ptObject);
 
 % State variables
 initVel = 0;
-initAng = 0.5*pi;
+initAng = 0.25*pi;
 finalVel = 0;
 finalAng = atan2(ptGoal(2)-ptEnd(2), ptGoal(1)-ptEnd(1));
 orientDist = robotRadius; % could be used to limit the angular velocity, for now to make the graph more pretty
@@ -30,7 +30,6 @@ orientDist = robotRadius; % could be used to limit the angular velocity, for now
 self = struct('X',[],'Y',[],'Vx',[],'Vy',[],'W',[]); % contains only current variables
 path = struct('X',[],'Y',[],'Vx',[],'Vy',[],'W',[]); % contains current and future variables
 obst = struct('X',[],'Y',[],'Vx',[],'Vy',[],'W',[]); % contains only current variables
-dangerZone = struct('X',[],'Y',[]);
 
 self.X=ptStart(1); self.Y=ptStart(2); 
 self.Vx=initVel*cos(initAng); self.Vy=initVel*sin(initAng); 
@@ -39,9 +38,6 @@ self.W=initAng;
 obst.X = ptObject(:,1); obst.Y = ptObject(:,2);
 obst.Vx = velObject(:,1); obst.Vy = velObject(:,2);
 obst.W = atan(velObject(2)/velObject(1));
-
-dangerZone.X = obst.X + velObject(:,1)*predict_dt*dt;
-dangerZone.Y = obst.Y + velObject(:,2)*predict_dt*dt;
 
 figure(1)
 hold on
@@ -63,7 +59,7 @@ if ~isempty(ptObject)
     for j = 1:length(ptObject(:,1))
         obstPosHandle(j) = rectangle('Position', [obst.X(j)-robotRadius, obst.Y(j)-robotRadius, 2*robotRadius, 2*robotRadius], 'Curvature', [1, 1], 'FaceColor', 'b');
         obstDirHandle(j) = quiver(0,0,robotRadius*cos(obst.W(j)),robotRadius*sin(obst.W(j)), 'linewidth', 5,'color',[1 0.5 0]);
-        obstZoneHandle(j) = rectangle('Position', [dangerZone.X-minRadius, dangerZone.Y-minRadius, 2*minRadius, 2*minRadius], 'Curvature', [1, 1], 'EdgeColor', 'r', 'LineStyle', '--');
+        obstZoneHandle(j) = rectangle('Position', [obst.X(j)-minRadius, obst.Y(j)-minRadius, 2*minRadius, 2*minRadius], 'Curvature', [1, 1], 'EdgeColor', 'r', 'LineStyle', '--');
     end
 end
 
@@ -72,7 +68,7 @@ firstTime = true;
 count = 0;
 while true
     %% Check if goal is reached
-    if abs(self.X - ptEnd(1)) < posMargin && abs(self.Y - ptEnd(2)) < posMargin && abs(self.W-finalAng) < angMargin
+    if norm([self.X, self.Y]-ptEnd)< posMargin && abs(self.W-finalAng) < angMargin
         disp('Goal reached!');
         break;
     end
@@ -96,7 +92,7 @@ while true
         %% Initial path
         pts=[ptStart; ptInitState; ptFinalState; ptEnd];
         [X, Y]=bezierCurve(pts, dt);
-        ptDanger=findDanger([dangerZone.X, dangerZone.Y], X, Y, minRadius); % check if circle crosses path
+        ptDanger=findDanger([obst.X, obst.Y], X, Y, minRadius); % check if circle crosses path
         [nDanger,~]=size(ptDanger); % amount of danger points
         
         if nDanger > 0
@@ -140,7 +136,7 @@ while true
                 obstDirHandle(j).YData = obst.Y(j);
                 obstDirHandle(j).UData = robotRadius*cos(obst.W(j));
                 obstDirHandle(j).VData = robotRadius*sin(obst.W(j));
-                obstZoneHandle(j).Position = [dangerZone.X(j)-minRadius, dangerZone.Y(j)-minRadius, 2*minRadius, 2*minRadius];
+                obstZoneHandle(j).Position = [obst.X(j)-minRadius, obst.Y(j)-minRadius, 2*minRadius, 2*minRadius];
             end
         end
         drawnow;
@@ -171,14 +167,12 @@ while true
     % obstacle Vx and Vy are constant, this can be changed
     obst.X = obst.X + obst.Vx*dt;
     obst.Y = obst.Y + obst.Vy*dt;
-    dangerZone.X = obst.X + obst.Vx*predict_dt*dt;
-    dangerZone.Y = obst.Y + obst.Vy*predict_dt*dt;
     
     %% Remove old path data
     path.X(1)=[]; path.Y(1)=[]; path.Vx(1)=[]; path.Vy(1)=[]; path.W(1)=[];
     
     %% Check if there is danger now
-    ptDanger=findDanger([dangerZone.X, dangerZone.Y], X, Y, minRadius); % check if circle crosses path
+    ptDanger=findDanger([obst.X, obst.Y], X, Y, minRadius); % check if circle crosses path
     [nDanger,~]=size(ptDanger); % amount of danger points
     
     count = count + 1;
