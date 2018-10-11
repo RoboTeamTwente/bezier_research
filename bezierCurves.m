@@ -61,7 +61,11 @@ ang=getRotation(V);
 angVel=diff(ang)/dt;
 
 self = struct('X',X,'Y',Y,'W',ang);
-obst = struct('X',[],'Y',[],'W',[]);
+if isempty(ptObject)
+    obst = struct('X',[],'Y',[],'W',[]);
+else
+    obst = struct('X',ptObject(:,1)*ones(1,length(self.X)),'Y',ptObject(:,2)*ones(1,length(self.X)),'W',2*pi*rand(length(self.X),1)*ones(1,length(self.X)));
+end
 
 
 %% Visuals
