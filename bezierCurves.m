@@ -16,7 +16,7 @@ ptStart=[0 0]; % start position
 ptEnd=[100 100]; % ball position
 ptGoal=[130 130]; % point where the ball should go to
 ptObject=[0 100]; % objects that are in the way
-velObject=[150 -80]; % velocity of objects
+velObject=[100 -80]; % velocity of objects
 [nObstacles,~]=size(ptObject);
 
 % State variables
@@ -31,9 +31,9 @@ self = struct('X',[],'Y',[],'Vx',[],'Vy',[],'W',[]); % contains only current var
 path = struct('X',[],'Y',[],'Vx',[],'Vy',[],'W',[]); % contains current and future variables
 obst = struct('X',[],'Y',[],'Vx',[],'Vy',[],'W',[]); % contains only current variables
 
-self.X=ptStart(1); self.Y=ptStart(2); 
-self.Vx=initVel*cos(initAng); self.Vy=initVel*sin(initAng); 
-self.W=initAng; 
+self.X=ptStart(1); self.Y=ptStart(2);
+self.Vx=initVel*cos(initAng); self.Vy=initVel*sin(initAng);
+self.W=initAng;
 
 obst.X = ptObject(:,1); obst.Y = ptObject(:,2);
 obst.Vx = velObject(:,1); obst.Vy = velObject(:,2);
@@ -92,8 +92,14 @@ while true
         %% Initial path
         pts=[ptStart; ptInitState; ptFinalState; ptEnd];
         [X, Y]=bezierCurve(pts, dt);
-        ptDanger=findDanger([obst.X, obst.Y], X, Y, minRadius); % check if circle crosses path
+        ptDanger=findDanger(obst, X, Y, minRadius, dt); % check if circle crosses path
         [nDanger,~]=size(ptDanger); % amount of danger points
+        
+        %% Prototype new object avoidance part
+        % -----------------------------------------------------------------
+        % line described by ax + by + c = 0
+        % point described by (x0,y0)
+        % compute distance d between them
         
         if nDanger > 0
             %% Avoid obstacle by adding control point
@@ -158,11 +164,11 @@ while true
     end
     self.X = self.X + self.Vx*dt;
     self.Y = self.Y + self.Vy*dt;
-
+    
     % give instructions to robot
-    self.Vx = path.Vx(1); 
-    self.Vy = path.Vy(1);
-    self.W = path.W(1);
+    self.Vx = path.Vx(2);
+    self.Vy = path.Vy(2);
+    self.W = path.W(2);
     
     % obstacle Vx and Vy are constant, this can be changed
     obst.X = obst.X + obst.Vx*dt;
@@ -172,7 +178,7 @@ while true
     path.X(1)=[]; path.Y(1)=[]; path.Vx(1)=[]; path.Vy(1)=[]; path.W(1)=[];
     
     %% Check if there is danger now
-    ptDanger=findDanger([obst.X, obst.Y], X, Y, minRadius); % check if circle crosses path
+    ptDanger=findDanger(obst, X, Y, minRadius, dt); % check if circle crosses path
     [nDanger,~]=size(ptDanger); % amount of danger points
     
     count = count + 1;
@@ -222,30 +228,55 @@ else
 end
 end
 
-function [dangerous]=findDanger(obj, BZ_X, BZ_Y, minRadius)
+function [dangerous]=findDanger(obst, BZ_X, BZ_Y, minRadius, dt)
 dangerous=[];
-if isempty(obj)
+if isempty(obst.X)
     return;
 end
-for i=1:length(obj(:,1))
-    x=obj(i,1);
-    y=obj(i,2);
-    D=sqrt((BZ_X-x).^2+(BZ_Y-y).^2);
-    if min(D)<minRadius
-        dangerous=[dangerous; x, y];
-        
-        % If the path goes through 2 danger zones, add the other obstacle
-        % too
-        for j=1:length(obj(:,1))
-            if i~=j && norm(obj(i,:)-obj(j,:))<2*minRadius
-                for k=1:length(BZ_X)
-                    pathToObj1 = (obj(i,:)-[BZ_X(k), BZ_Y(k)])/norm(obj(i,:)-[BZ_X(k), BZ_Y(k)]);
-                    pathToObj2 = (obj(j,:)-[BZ_X(k), BZ_Y(k)])/norm(obj(j,:)-[BZ_X(k), BZ_Y(k)]);
-                    if dot(pathToObj1, pathToObj2)<-0.95
-                        dangerous=[dangerous; obj(j,:)];
-                    end
-                end
+for i=1:length(obst.X)
+    a = obst.Vy(i)/obst.Vx(i);
+    b = -1;
+    c = obst.Y(i) - a*obst.X(i);
+    for j = 1:length(BZ_X)
+        x0 = BZ_X(j);
+        y0 = BZ_Y(j);
+        d = abs(a*x0+b*y0+c)/sqrt(a^2+b^2);
+        if d < minRadius
+            %disp(['there will be troubles at t = ', num2str((j-1)*dt), '!'])
+            % Robot enters collision course at t = (j-1)*dt
+            obstPredictedPos = [obst.X(i), obst.Y(i)] + [obst.Vx(i), obst.Vy(i)]*(j-1)*dt;
+            % Take the last part of the circle to be the danger point.
+            obstPredictedPos = obstPredictedPos - minRadius*[obst.Vx(i), obst.Vy(i)]/norm([obst.Vx(i), obst.Vy(i)]);
+            
+            if dot(obstPredictedPos-[x0,y0], [obst.Vx(i), obst.Vy(i)]) < 0
+                % Obstacle has not passed by yet when robot gets there.
+                dangerous=[dangerous; obstPredictedPos];
+                
+                % If the path goes through 2 danger zones, add the other obstacle
+                % too
+                
+                % These obstacle positions should be converted to predicted
+                % positions
+                %         for j=1:length(obst.X)
+                %             if i~=j &&
+                %             norm([obst.X(i),obst.Y(i)]-[obst.X(j),obst.Y(j)])<2*minRadius
+                %                 for k=1:length(BZ_X)
+                %                     pathToObj1 =
+                %                     ([obst.X(i),obst.Y(i)]-[BZ_X(k),
+                %                     BZ_Y(k)])/norm([obst.X(i),obst.Y(i)]-[BZ_X(k),
+                %                     BZ_Y(k)]); pathToObj2 =
+                %                     ([obst.X(j),obst.Y(j)]-[BZ_X(k),
+                %                     BZ_Y(k)])/norm([obst.X(j),obst.Y(j)]-[BZ_X(k),
+                %                     BZ_Y(k)]); if dot(pathToObj1,
+                %                     pathToObj2)<-0.95
+                %                         dangerous=[dangerous;
+                %                         [obst.X(j),obst.Y(j)]];
+                %                     end
+                %                 end
+                %             end
+                %         end
             end
+            break;
         end
     end
 end
