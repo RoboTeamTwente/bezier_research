@@ -1,10 +1,13 @@
-clear; clc; %clf(1); clf(2);
+clear; clc; clf(1); clf(2);
 % The purpose of this file is to make the planned path responsive to moving
 % obstacles. Only for 1 obstacle atm.
 
 %% Set variables
+robotRadius = 10;
+updateTimes = 30; % number of times to update the plot
+
 dt = 1/2000; % normalized time step
-minRadius=25; % circle around object
+minRadius=30; % circle around object
 ptStart=[5 5]; % start position
 ptEnd=[100 100]; % ball position
 ptGoal=[130 80]; % point where the ball should go to
@@ -18,7 +21,6 @@ finalVel = 0;
 finalAng = atan2(ptGoal(2)-ptEnd(2), ptGoal(1)-ptEnd(1));
 orientDist = 30; % could be used to limit the angular velocity, for now to make the graph more pretty
 
- 
 %% Set initial and final states
 if round(initVel) == 0 % Should be limited and not rounded
     ptInitState = ptStart + orientDist*[0, 0; cos(initAng), sin(initAng)];
@@ -58,6 +60,8 @@ A=getAcceleration(pts, dt);
 ang=getRotation(V);
 angVel=diff(ang)/dt;
 
+self = struct('X',X,'Y',Y,'W',ang);
+obst = struct('X',[],'Y',[],'W',[]);
 
 
 %% Visuals
@@ -118,7 +122,53 @@ grid on
 xlabel('Normalized time')
 ylabel('Angular velocity [rad/(a.u.)]')
 
+%% SIMULATION: Make initial plot with handles
+figure(10)
+hold on
+grid on
+xlim([min(self.X)-2*robotRadius, max(self.X)+2*robotRadius]);
+ylim([min(self.Y)-2*robotRadius, max(self.Y)+2*robotRadius]);
+axis equal
 
+% Self
+plot(self.X, self.Y, '--k')
+plot(self.X(1), self.Y(1), '.g', 'MarkerSize', 20)
+plot(self.X(end), self.Y(end), '.r', 'MarkerSize', 20)
+
+selfPosHandle = rectangle('Position', [self.X(1)-robotRadius, self.Y(1)-robotRadius, 2*robotRadius, 2*robotRadius], 'Curvature', [1, 1], 'FaceColor', 'y');
+selfDirHandle = quiver(0,0,robotRadius*cos(self.W(1)),robotRadius*sin(self.W(1)), 'linewidth', 5,'color',[1 0.5 0]);
+
+% Obstacles
+if ~isempty(obst.X)
+    for j = 1:length(obst.X(:,1))
+        obstPosHandle(j) = rectangle('Position', [obst.X(j,1)-robotRadius, obst.Y(j,1)-robotRadius, 2*robotRadius, 2*robotRadius], 'Curvature', [1, 1], 'FaceColor', 'b');
+        obstDirHandle(j) = quiver(0,0,robotRadius*cos(obst.W(j,1)),robotRadius*sin(self.W(j,1)), 'linewidth', 5,'color',[1 0.5 0]);
+    end
+end
+
+%% SIMULATION: Loop through path
+for i = 1:length(self.X)
+    if mod(i,round(length(self.X)/updateTimes)) == 0
+        % Self
+        selfPosHandle.Position = [self.X(i)-robotRadius, self.Y(i)-robotRadius, 2*robotRadius, 2*robotRadius];
+        selfDirHandle.XData = self.X(i);
+        selfDirHandle.YData = self.Y(i);
+        selfDirHandle.UData = robotRadius*cos(self.W(i));
+        selfDirHandle.VData = robotRadius*sin(self.W(i));
+        
+        % Obstacles
+        if ~isempty(obst.X)
+            for j = 1:length(obst.X(:,1))
+                obstPosHandle(j).Position = [obst.X(j,i)-robotRadius, obst.Y(j,i)-robotRadius, 2*robotRadius, 2*robotRadius];
+                obstDirHandle(j).XData = obst.X(j,i);
+                obstDirHandle(j).YData = obst.Y(j,i);
+                obstDirHandle(j).UData = robotRadius*cos(obst.W(j,i));
+                obstDirHandle(j).VData = robotRadius*sin(obst.W(j,i));
+            end
+        end
+        drawnow;
+    end
+end
 
 %% Functions
 function [X, Y] = bezierCurve(P, dt)
