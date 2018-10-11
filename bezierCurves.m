@@ -1,10 +1,10 @@
-clear; clc; clf(1); clf(2);
+clear; clc; close all;
 % The purpose of this file is to make the planned path responsive to moving
 % obstacles. Only for 1 obstacle atm.
 
 %% Set variables
 robotRadius = 10;
-updateTimes = 30; % number of times to update the plot
+updateTimes = 50; % number of time steps between 2 plot updates
 
 dt = 1/2000; % normalized time step
 minRadius=30; % circle around object
@@ -16,162 +16,134 @@ ptObject=[60 65]; % objects that are in the way
 
 % State variables
 initVel = 0;
-initAng = 0.5*pi;
+initAng = -0.3*pi;
 finalVel = 0;
 finalAng = atan2(ptGoal(2)-ptEnd(2), ptGoal(1)-ptEnd(1));
 orientDist = 30; % could be used to limit the angular velocity, for now to make the graph more pretty
 
-%% Set initial and final states
-if round(initVel) == 0 % Should be limited and not rounded
-    ptInitState = ptStart + orientDist*[0, 0; cos(initAng), sin(initAng)];
-else
-    NumPoints = 4; % Start, initial state, final state, end
-    ptInitState = ptStart + initVel/(NumPoints-1)*[cos(initAng), sin(initAng)];
-end
+%% SIMULATION: Initialize
+self = struct('X',[],'Y',[],'W',[]);
+obst = struct('X',[],'Y',[],'W',[]);
 
-if round(finalVel) == 0 % Should be limited and not rounded
-    ptFinalState = ptEnd + orientDist*[cos(pi-finalAng), -sin(pi-finalAng); 0, 0];
-else
-    NumPoints = 4; % Start, initial state, final state, end
-    ptFinalState = ptEnd + finalVel/(NumPoints-1)*[cos(pi-finalAng), -sin(pi-finalAng)];
-end
-
-%% Initial path
-pts=[ptStart; ptInitState; ptFinalState; ptEnd];
-[initX, initY]=bezierCurve(pts, dt);
-ptDanger=findDanger(ptObject, initX, initY, minRadius); % check if circle crosses path
-[nDanger,~]=size(ptDanger); % amount of danger points
-
-%% Avoid obstacle by adding control point
-[ptControl]=createCP(ptDanger, initX, initY, minRadius);
-if round(initVel) > 0 && ~isempty(ptControl) % Should be limited and not rounded
-    NumPoints = 4 + length(ptControl(:,1)); % Same as before + number of control points
-    ptInitState = ptStart + initVel/(NumPoints-1)*[cos(initAng), sin(initAng)];
-end
-pts=[ptStart; ptInitState; ptControl; ptFinalState; ptEnd];
-
-%% Calculate Bezier Curve
-[X, Y]=bezierCurve(pts, dt);
-
-%% Other stuff
-% Calculate data for analysis
-V=getVelocity(pts, dt);
-A=getAcceleration(pts, dt);
-ang=getRotation(V);
-angVel=diff(ang)/dt;
-
-self = struct('X',X,'Y',Y,'W',ang);
-if isempty(ptObject)
-    obst = struct('X',[],'Y',[],'W',[]);
-else
-    obst = struct('X',ptObject(:,1)*ones(1,length(self.X)),'Y',ptObject(:,2)*ones(1,length(self.X)),'W',2*pi*rand(length(self.X),1)*ones(1,length(self.X)));
-end
-
-
-%% Visuals
-figure(1)
-%set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
-subplot(2,3,[1,2,4,5])
-hold on
-plot(initX, initY, '--', 'color', [0.6, 0.6, 0.6])
-plot(X, Y, '--k')
-plot(ptStart(1),ptStart(2),'g*');
-plot(ptEnd(1),ptEnd(2),'r*');
-if ~isempty(ptControl)
-    plot(ptControl(:,1),ptControl(:,2),'b*')
-end
-plot([ptInitState(2,1), ptFinalState(1,1)],[ptInitState(2,2), ptFinalState(1,2)],'m*');
-plot(ptGoal(1),ptGoal(2),'c*');
-if ~isempty(ptObject)
-    plot(ptObject(:,1),ptObject(:,2),'k*')
-    circlesX = ptObject(:,1)*ones(1,100) + ones(nObstacles,1)*minRadius*cos(linspace(0,2*pi,100));
-    circlesY = ptObject(:,2)*ones(1,100) + ones(nObstacles,1)*minRadius*sin(linspace(0,2*pi,100));
-    plot(circlesX, circlesY, '.k', 'MarkerSize', 2)
-end
-ylim([-50 ptGoal(2)+50]); xlim([-50 ptGoal(1)+20]);
-grid on
-axis equal
-if ~isempty(ptControl)
-    legend('Initial path', 'Path', 'Start point', 'End Point', 'Control points', 'Orientation points', 'Goal', 'Objects', 'location', 'best')
-else
-    legend('Initial path', 'Path', 'Start point', 'End Point', 'Orientation points', 'Goal', 'Objects', 'location', 'best')
-end
-hold off
-
-subplot(2,3,3)
-T = linspace(0,2,length(V));
-plot(T,V(1,:),T,V(2,:),T,sqrt(V(1,:).^2 + V(2,:).^2))
-grid on
-xlabel('Normalized time')
-ylabel('Velocity')
-legend('V_x','V_y','V_t_o_t','location','best')
-
-subplot(2,3,6)
-plot(T,A(1,:),T,A(2,:),T,sqrt(A(1,:).^2 + A(2,:).^2))
-grid on
-xlabel('Normalized time')
-ylabel('Acceleration')
-legend('A_x','A_y','A_t_o_t','location','best')
-
-figure(2)
-subplot(1,2,1)
-plot(T,ang);
-grid on
-xlabel('Normalized time')
-ylabel('Angle [rad]')
-
-subplot(1,2,2)
-plot(T(2:end),angVel);
-grid on
-xlabel('Normalized time')
-ylabel('Angular velocity [rad/(a.u.)]')
-
-%% SIMULATION: Make initial plot with handles
-figure(10)
+figure
 hold on
 grid on
-xlim([min(self.X)-2*robotRadius, max(self.X)+2*robotRadius]);
-ylim([min(self.Y)-2*robotRadius, max(self.Y)+2*robotRadius]);
+xlim([ptStart(1)-4*robotRadius, ptEnd(1)+4*robotRadius]);
+ylim([ptStart(2)-4*robotRadius, ptEnd(2)+4*robotRadius]);
 axis equal
 
 % Self
-plot(self.X, self.Y, '--k')
-plot(self.X(1), self.Y(1), '.g', 'MarkerSize', 20)
-plot(self.X(end), self.Y(end), '.r', 'MarkerSize', 20)
+selfPathHandle = plot(ptStart(1), ptStart(2), '--k');
+plot(ptStart(1), ptStart(2), '.g', 'MarkerSize', 20)
+plot(ptEnd(1), ptEnd(2), '.r', 'MarkerSize', 20)
 
-selfPosHandle = rectangle('Position', [self.X(1)-robotRadius, self.Y(1)-robotRadius, 2*robotRadius, 2*robotRadius], 'Curvature', [1, 1], 'FaceColor', 'y');
-selfDirHandle = quiver(0,0,robotRadius*cos(self.W(1)),robotRadius*sin(self.W(1)), 'linewidth', 5,'color',[1 0.5 0]);
+selfPosHandle = rectangle('Position', [ptStart(1)-robotRadius, ptStart(2)-robotRadius, 2*robotRadius, 2*robotRadius], 'Curvature', [1, 1], 'FaceColor', 'y');
+selfDirHandle = quiver(0,0,robotRadius*cos(initAng),robotRadius*sin(initAng), 'linewidth', 5,'color',[1 0.5 0]);
 
 % Obstacles
-if ~isempty(obst.X)
-    for j = 1:length(obst.X(:,1))
-        obstPosHandle(j) = rectangle('Position', [obst.X(j,1)-robotRadius, obst.Y(j,1)-robotRadius, 2*robotRadius, 2*robotRadius], 'Curvature', [1, 1], 'FaceColor', 'b');
-        obstDirHandle(j) = quiver(0,0,robotRadius*cos(obst.W(j,1)),robotRadius*sin(self.W(j,1)), 'linewidth', 5,'color',[1 0.5 0]);
+if ~isempty(ptObject)
+    for j = 1:length(ptObject(:,1))
+        obstPosHandle(j) = rectangle('Position', [ptObject(j,1)-robotRadius, ptObject(j,2)-robotRadius, 2*robotRadius, 2*robotRadius], 'Curvature', [1, 1], 'FaceColor', 'b');
+        obstDirHandle(j) = quiver(0,0,robotRadius*cos(0),robotRadius*sin(0), 'linewidth', 5,'color',[1 0.5 0]);
     end
 end
 
-%% SIMULATION: Loop through path
-for i = 1:length(self.X)
-    if mod(i,round(length(self.X)/updateTimes)) == 0
+%% Go from state to state
+makeNewPath = true;
+count = 0;
+time = 1;
+while true
+    %% Check if goal is reached
+    if ~isempty(self.X) && self.X(time) == ptEnd(1) && self.Y(time) == ptEnd(2)
+        disp('Goal reached!');
+        break;
+    end
+    
+    if makeNewPath
+        %% Set initial and final states
+        if round(initVel) == 0 % Should be limited and not rounded
+            ptInitState = ptStart + orientDist*[0, 0; cos(initAng), sin(initAng)];
+        else
+            NumPoints = 4; % Start, initial state, final state, end
+            ptInitState = ptStart + initVel/(NumPoints-1)*[cos(initAng), sin(initAng)];
+        end
+        
+        if round(finalVel) == 0 % Should be limited and not rounded
+            ptFinalState = ptEnd + orientDist*[cos(pi-finalAng), -sin(pi-finalAng); 0, 0];
+        else
+            NumPoints = 4; % Start, initial state, final state, end
+            ptFinalState = ptEnd + finalVel/(NumPoints-1)*[cos(pi-finalAng), -sin(pi-finalAng)];
+        end
+        
+        %% Initial path
+        pts=[ptStart; ptInitState; ptFinalState; ptEnd];
+        [X, Y]=bezierCurve(pts, dt);
+        ptDanger=findDanger(ptObject, X, Y, minRadius); % check if circle crosses path
+        [nDanger,~]=size(ptDanger); % amount of danger points
+        
+        if nDanger > 0
+            %% Avoid obstacle by adding control point
+            [ptControl]=createCP(ptDanger, X, Y, minRadius);
+            if round(initVel) > 0 && ~isempty(ptControl) % Should be limited and not rounded
+                NumPoints = 4 + length(ptControl(:,1)); % Same as before + number of control points
+                ptInitState = ptStart + initVel/(NumPoints-1)*[cos(initAng), sin(initAng)];
+            end
+            pts=[ptStart; ptInitState; ptControl; ptFinalState; ptEnd];
+            
+            %% Calculate new Bezier Curve
+            [X, Y]=bezierCurve(pts, dt);
+            
+            %makeNewPath = true;
+            makeNewPath = false;
+        else
+            makeNewPath = false;
+        end
+        
+        %% Movement data
+        V=getVelocity(pts, dt);
+        A=getAcceleration(pts, dt);
+        ang=getRotation(V);
+        angVel=diff(ang)/dt;
+        
+        self.X = X; self.Y = Y; self.W = ang;
+        obst.X = ptObject(:,1)*ones(1,length(self.X));
+        obst.Y = ptObject(:,2)*ones(1,length(self.X));
+        obst.W = zeros(1,length(self.X));
+        
+        time = 1; % reset time every new path
+    end
+    
+    %% SIMULATION: Update
+    if mod(count,updateTimes) == 0
         % Self
-        selfPosHandle.Position = [self.X(i)-robotRadius, self.Y(i)-robotRadius, 2*robotRadius, 2*robotRadius];
-        selfDirHandle.XData = self.X(i);
-        selfDirHandle.YData = self.Y(i);
-        selfDirHandle.UData = robotRadius*cos(self.W(i));
-        selfDirHandle.VData = robotRadius*sin(self.W(i));
+        selfPathHandle.XData = self.X;
+        selfPathHandle.YData = self.Y;
+        selfPosHandle.Position = [self.X(time)-robotRadius, self.Y(time)-robotRadius, 2*robotRadius, 2*robotRadius];
+        selfDirHandle.XData = self.X(time);
+        selfDirHandle.YData = self.Y(time);
+        selfDirHandle.UData = robotRadius*cos(self.W(time));
+        selfDirHandle.VData = robotRadius*sin(self.W(time));
         
         % Obstacles
         if ~isempty(obst.X)
             for j = 1:length(obst.X(:,1))
-                obstPosHandle(j).Position = [obst.X(j,i)-robotRadius, obst.Y(j,i)-robotRadius, 2*robotRadius, 2*robotRadius];
-                obstDirHandle(j).XData = obst.X(j,i);
-                obstDirHandle(j).YData = obst.Y(j,i);
-                obstDirHandle(j).UData = robotRadius*cos(obst.W(j,i));
-                obstDirHandle(j).VData = robotRadius*sin(obst.W(j,i));
+                obstPosHandle(j).Position = [obst.X(j,time)-robotRadius, obst.Y(j,time)-robotRadius, 2*robotRadius, 2*robotRadius];
+                obstDirHandle(j).XData = obst.X(j,time);
+                obstDirHandle(j).YData = obst.Y(j,time);
+                obstDirHandle(j).UData = robotRadius*cos(obst.W(j,time));
+                obstDirHandle(j).VData = robotRadius*sin(obst.W(j,time));
             end
         end
         drawnow;
     end
+    
+    %% Replace initial data with current data
+    initVel = norm(V(:,time));
+    initAng = self.W(time);
+    ptStart = [self.X(time), self.Y(time)];
+    
+    time = time + 1;
+    count = count + 1;
 end
 
 %% Functions
