@@ -16,8 +16,8 @@ groupB = [];
 % All triangles
 triangleCombinations = possibleCombinations(nObjects);
 
-% Compute sides of all triangles
-[a, b, c] = createDistances(combinations, sortedObjects, nObjects);
+% Compute circumcircles
+[radius, center] = createCircumcircles(combinations, sortedObjects, nObjects);
 
 % close all
 figure
@@ -26,19 +26,11 @@ plot(sortedObjects(:,1),sortedObjects(:,2),'r*');
 hold on
 % tri2=[1 2 3; 2 3 5; 2 4 5];
 triplot(triangleCombinations,sortedObjects(:,1),sortedObjects(:,2));
+plot(center(:,1), center(:,2), 'g*')
 % % triplot(tri,x,y,'g');
 % xlim([0 100]); ylim([0 100]);
 
-%%
-% [vx, vy] = createVoronoi(ptObject(:,1), ptObject(:,2));
-% plot(ptObject(:,1),ptObject(:,2), 'b*')
-% hold on
-% plot(c(:,1), c(:,2), 'r*');
-% plot(vx, vy, 'g');
-% triplot(tri,x,y);
-% xlim([0 100]); ylim([0 100]);
-
-%%
+%% Functions
 function [vx,vy] = createVoronoi(x,y)
     tri = delaunay(x,y);
     tr = triangulation(tri,x,y);
@@ -135,14 +127,28 @@ combinations = ones(nObjects,3);
     end
 end
 
-function [a, b, c] = createDistances(combinations, sortedObjects, nObjects)
+function [radius, center] = createCircumcircles(combinations, sortedObjects, nObjects)
 corners = ones(3,2);  
+radius = ones(nObjects,1);
+center = ones(nObjects,2);
     for i = 1:nObjects
         for k = 1:3
             corners(k,:) = [sortedObjects(combinations(i,k),1), sortedObjects(combinations(i,k),2)];
         end
-        a(i,1) = sqrt((corners(2,1)-corners(1,1))^2+(corners(2,2)-corners(1,2))^2);
-        b(i,1) = sqrt((corners(3,1)-corners(2,1))^2+(corners(3,2)-corners(2,2))^2);
-        c(i,1) = sqrt((corners(1,1)-corners(3,1))^2+(corners(1,2)-corners(3,1))^2);
+        a = sqrt((corners(2,1)-corners(1,1))^2+(corners(2,2)-corners(1,2))^2);
+        b = sqrt((corners(3,1)-corners(2,1))^2+(corners(3,2)-corners(2,2))^2);
+        c = sqrt((corners(1,1)-corners(3,1))^2+(corners(1,2)-corners(3,1))^2);
+        area = shoelace(corners);
+        radius(i,1) = a * b * c / (4 * area);
+        barCenter = [a^2 * (b^2 + c^2 -a^2), b^2 * (c^2 + a^2 - b^2), c^2 * (a^2 + b^2 - c^2)];
+        center = barCenter(1) * corners(1,:) + barCenter(2) * corners(2,:) + barCenter(3) * corners(3,:);
+        center(i,:) = center/sum(barCenter);
     end
 end
+
+function area = shoelace(corners) % shoelace formula
+    area = 0.5*(corners(1,1) * corners(2,2) + corners(2,1) * corners(3,2) + ...
+        corners(3,1) * corners(1,2) - corners(2,1) * corners(1,2) - ...
+        corners(3,1) * corners(2,2) - corners(1,1) * corners(3,2));
+end
+
