@@ -17,7 +17,7 @@ groupB = [];
 triangleCombinations = possibleCombinations(nObjects);
 
 % Compute circumcircles
-[radius, center] = createCircumcircles(combinations, sortedObjects, nObjects);
+[radius, center] = createCircumcircles(triangleCombinations, sortedObjects, nObjects);
 
 % close all
 figure
@@ -28,7 +28,7 @@ hold on
 triplot(triangleCombinations,sortedObjects(:,1),sortedObjects(:,2));
 plot(center(:,1), center(:,2), 'g*')
 % % triplot(tri,x,y,'g');
-% xlim([0 100]); ylim([0 100]);
+xlim([0 100]); ylim([0 100]);
 
 %% Functions
 function [vx,vy] = createVoronoi(x,y)
@@ -139,10 +139,14 @@ center = ones(nObjects,2);
         b = sqrt((corners(3,1)-corners(2,1))^2+(corners(3,2)-corners(2,2))^2);
         c = sqrt((corners(1,1)-corners(3,1))^2+(corners(1,2)-corners(3,1))^2);
         area = shoelace(corners);
+%         area = 0.5*(corners(1,1) * corners(2,2) + corners(2,1) * corners(3,2) + ...
+%         corners(3,1) * corners(1,2) - corners(2,1) * corners(1,2) - ...
+%         corners(3,1) * corners(2,2) - corners(1,1) * corners(3,2));
         radius(i,1) = a * b * c / (4 * area);
         barCenter = [a^2 * (b^2 + c^2 -a^2), b^2 * (c^2 + a^2 - b^2), c^2 * (a^2 + b^2 - c^2)];
-        center = barCenter(1) * corners(1,:) + barCenter(2) * corners(2,:) + barCenter(3) * corners(3,:);
-        center(i,:) = center/sum(barCenter);
+        almostCenter = barCenter(1) * corners(1,:) + barCenter(2) * corners(2,:) + barCenter(3) * corners(3,:);
+        % This is not the right name but ok
+        center(i,:) = almostCenter/sum(barCenter);
     end
 end
 
