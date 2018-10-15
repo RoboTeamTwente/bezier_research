@@ -1,7 +1,7 @@
 clear all; close all; clc;
 
 %%
-ptObject = [20 30; 60 90; 10 45; 65 10; 90 60; ];
+ptObject = [20 30; 60 90; 10 45; 65 10; 90 60];
 [nObjects,~]=size(ptObject);
 
 % Sort objects with increasing x
@@ -13,8 +13,26 @@ groupA = [];
 groupB = [];
 [groupA, groupB] = divideObjects(sortedObjects, nObjects);
 
+% All triangles
+triangleCombinations = possibleCombinations(nObjects);
+
+% close all
+figure
+set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
+plot(sortedObjects(:,1),sortedObjects(:,2),'r*');
+hold on
+% tri2=[1 2 3; 2 3 5; 2 4 5];
+triplot(triangleCombinations,sortedObjects(:,1),sortedObjects(:,2));
+% % triplot(tri,x,y,'g');
+% xlim([0 100]); ylim([0 100]);
+
+%%
 % [vx, vy] = createVoronoi(ptObject(:,1), ptObject(:,2));
-% plot(vx, vy, 'b');
+% plot(ptObject(:,1),ptObject(:,2), 'b*')
+% hold on
+% plot(c(:,1), c(:,2), 'r*');
+% plot(vx, vy, 'g');
+% triplot(tri,x,y);
 % xlim([0 100]); ylim([0 100]);
 
 %%
@@ -97,5 +115,17 @@ function [groupA, groupB] = divideObjects(sortedObjects, nObjects)
     else
         groupA=sortedObjects(1:round(divisionNumber),:);
         groupB=sortedObjects(round(divisionNumber)+1:end,:);
+    end
+end
+
+function combinations = possibleCombinations(nObjects)
+    for i = 1:nObjects
+        for k = 1:3
+            value = i+k-1;
+            if value > nObjects
+                value = value - nObjects;
+            end
+            combinations(i,k) = value;
+        end
     end
 end
