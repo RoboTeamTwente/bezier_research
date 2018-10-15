@@ -1,16 +1,21 @@
 clear all; close all; clc;
 
 %%
-ptObject = [20 30; 60 90; 20 45; 65 10; 90 60; ];
+ptObject = [20 30; 60 90; 10 45; 65 10; 90 60; ];
 [nObjects,~]=size(ptObject);
 
 % Sort objects with increasing x
 sortedObjects = ones(nObjects,2);
 sortedObjects = sortObjects(ptObject, nObjects);
 
-[vx, vy] = createVoronoi(ptObject(:,1), ptObject(:,2));
-plot(vx, vy, 'b');
-xlim([0 100]); ylim([0 100]);
+% Divide objects
+groupA = [];
+groupB = [];
+[groupA, groupB] = divideObjects(sortedObjects, nObjects);
+
+% [vx, vy] = createVoronoi(ptObject(:,1), ptObject(:,2));
+% plot(vx, vy, 'b');
+% xlim([0 100]); ylim([0 100]);
 
 %%
 function [vx,vy] = createVoronoi(x,y)
@@ -64,22 +69,33 @@ function [vx,vy] = createVoronoi(x,y)
     vy = [vy ey];
 end
 
-function sortedObject = sortObjects(ptObject, nObjects)
+function sortedObjects = sortObjects(ptObject, nObjects)
     for i = 1:nObjects
         [~, index] = max(ptObject(:,1));
         if i==1
-            sortedObject(nObjects,:)=ptObject(index,:);
+            sortedObjects(nObjects,:)=ptObject(index,:);
         else
-            sortedObject(nObjects+1-i,:)=ptObject(index,:);
+            sortedObjects(nObjects+1-i,:)=ptObject(index,:);
         end
         ptObject(index,:)=[0 0];
     end
     
     for i = 1:nObjects-1
-        if sortedObject(i,1)==sortedObject(i+1,1)
-            if sortedObject(i,2) > sortedObject(i+1,2)
-                sortedObject([nObjects+i nObjects+i+1]) = sortedObject([nObjects+i+1 nObjects+i]);
+        if sortedObjects(i,1)==sortedObjects(i+1,1)
+            if sortedObjects(i,2) > sortedObjects(i+1,2)
+                sortedObjects([nObjects+i nObjects+i+1]) = sortedObjects([nObjects+i+1 nObjects+i]);
             end
         end
+    end
+end
+
+function [groupA, groupB] = divideObjects(sortedObjects, nObjects)
+    divisionNumber=nObjects/2;
+    if rem(nObjects, 2)==0
+        groupA=sortedObjects(1:divisionNumber,:);
+        groupB=sortedObjects(divisionNumber+1:end,:);
+    else
+        groupA=sortedObjects(1:round(divisionNumber),:);
+        groupB=sortedObjects(round(divisionNumber)+1:end,:);
     end
 end
