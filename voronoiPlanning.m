@@ -1,7 +1,7 @@
 clear all; close all; clc;
 
 %%
-ptObject = [20 30; 60 90; 10 45; 65 10; 90 60; ];
+ptObject = [20 30; 60 90; 20 45; 65 10; 90 60; ];
 [nObjects,~]=size(ptObject);
 
 % Sort objects with increasing x
@@ -73,5 +73,13 @@ function sortedObject = sortObjects(ptObject, nObjects)
             sortedObject(nObjects+1-i,:)=ptObject(index,:);
         end
         ptObject(index,:)=[0 0];
+    end
+    
+    for i = 1:nObjects-1
+        if sortedObject(i,1)==sortedObject(i+1,1)
+            if sortedObject(i,2) > sortedObject(i+1,2)
+                sortedObject([nObjects+i nObjects+i+1]) = sortedObject([nObjects+i+1 nObjects+i]);
+            end
+        end
     end
 end
