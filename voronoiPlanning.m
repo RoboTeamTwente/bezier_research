@@ -16,6 +16,9 @@ groupB = [];
 % All triangles
 triangleCombinations = possibleCombinations(nObjects);
 
+% Compute sides of all triangles
+[a, b, c] = createDistances(combinations, sortedObjects, nObjects);
+
 % close all
 figure
 set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
@@ -88,18 +91,19 @@ function [vx,vy] = createVoronoi(x,y)
 end
 
 function sortedObjects = sortObjects(ptObject, nObjects)
+sortedObjects = ones(nObjects,2);
     for i = 1:nObjects
         [~, index] = max(ptObject(:,1));
-        if i==1
-            sortedObjects(nObjects,:)=ptObject(index,:);
+        if i == 1
+            sortedObjects(nObjects,:) = ptObject(index,:);
         else
-            sortedObjects(nObjects+1-i,:)=ptObject(index,:);
+            sortedObjects(nObjects+1-i,:) = ptObject(index,:);
         end
-        ptObject(index,:)=[0 0];
+        ptObject(index,:) = [0 0];
     end
     
     for i = 1:nObjects-1
-        if sortedObjects(i,1)==sortedObjects(i+1,1)
+        if sortedObjects(i,1) == sortedObjects(i+1,1)
             if sortedObjects(i,2) > sortedObjects(i+1,2)
                 sortedObjects([nObjects+i nObjects+i+1]) = sortedObjects([nObjects+i+1 nObjects+i]);
             end
@@ -108,17 +112,18 @@ function sortedObjects = sortObjects(ptObject, nObjects)
 end
 
 function [groupA, groupB] = divideObjects(sortedObjects, nObjects)
-    divisionNumber=nObjects/2;
-    if rem(nObjects, 2)==0
-        groupA=sortedObjects(1:divisionNumber,:);
-        groupB=sortedObjects(divisionNumber+1:end,:);
+    divisionNumber = nObjects/2;
+    if rem(nObjects, 2) == 0
+        groupA = sortedObjects(1:divisionNumber,:);
+        groupB = sortedObjects(divisionNumber+1:end,:);
     else
-        groupA=sortedObjects(1:round(divisionNumber),:);
-        groupB=sortedObjects(round(divisionNumber)+1:end,:);
+        groupA = sortedObjects(1:round(divisionNumber),:);
+        groupB = sortedObjects(round(divisionNumber)+1:end,:);
     end
 end
 
 function combinations = possibleCombinations(nObjects)
+combinations = ones(nObjects,3);
     for i = 1:nObjects
         for k = 1:3
             value = i+k-1;
@@ -127,5 +132,17 @@ function combinations = possibleCombinations(nObjects)
             end
             combinations(i,k) = value;
         end
+    end
+end
+
+function [a, b, c] = createDistances(combinations, sortedObjects, nObjects)
+corners = ones(3,2);  
+    for i = 1:nObjects
+        for k = 1:3
+            corners(k,:) = [sortedObjects(combinations(i,k),1), sortedObjects(combinations(i,k),2)];
+        end
+        a(i,1) = sqrt((corners(2,1)-corners(1,1))^2+(corners(2,2)-corners(1,2))^2);
+        b(i,1) = sqrt((corners(3,1)-corners(2,1))^2+(corners(3,2)-corners(2,2))^2);
+        c(i,1) = sqrt((corners(1,1)-corners(3,1))^2+(corners(1,2)-corners(3,1))^2);
     end
 end
