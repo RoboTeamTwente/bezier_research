@@ -1,7 +1,13 @@
 clear all; close all; clc;
 
 %%
-ptObject = [20 30; 30 90; 50 45; 65 10; 90 60; ];
+ptObject = [20 30; 60 90; 10 45; 65 10; 90 60; ];
+[nObjects,~]=size(ptObject);
+
+% Sort objects with increasing x
+sortedObjects = ones(nObjects,2);
+sortedObjects = sortObjects(ptObject, nObjects);
+
 [vx, vy] = createVoronoi(ptObject(:,1), ptObject(:,2));
 plot(vx, vy, 'b');
 xlim([0 100]); ylim([0 100]);
@@ -56,4 +62,16 @@ function [vx,vy] = createVoronoi(x,y)
     % Combine with internal edges
     vx = [vx ex];
     vy = [vy ey];
+end
+
+function sortedObject = sortObjects(ptObject, nObjects)
+    for i = 1:nObjects
+        [~, index] = max(ptObject(:,1));
+        if i==1
+            sortedObject(nObjects,:)=ptObject(index,:);
+        else
+            sortedObject(nObjects+1-i,:)=ptObject(index,:);
+        end
+        ptObject(index,:)=[0 0];
+    end
 end
