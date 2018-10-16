@@ -18,14 +18,22 @@ Q = zeros(4,2); % control points
 pts = path(:,2:3); % path points [X, Y]
 
 if ~onSameSide(pts,v0)
-    %% Case II   
-    % Determine maxes for parameters
+    %% Case II
+    % Determine maxes for parameters (only #3 atm)
+    p0ToObstacle = [obst_x, obst_y] - pts(1,:);
+    rotDir = (atan2(pts(2,2),pts(2,1))-atan2(obst_y,obst_x)) / abs(atan2(pts(2,2),pts(2,1))-atan2(obst_y,obst_x)); % direction in which to rotate the vecToObst
+    rotAng = rotDir*asin(obst_rad/norm(p0ToObstacle)); % angle to rotate p0ToObstacle by
+    p0ToQ3 = p0ToObstacle * [cos(rotAng), sin(rotAng); -sin(rotAng), cos(rotAng)];
+    alpha = [p0ToQ3(2)/p0ToQ3(1), -1]; % vector to make life easier
+    maxC = (dot(pts(1,:),alpha) - dot(pts(2,:),alpha))/(dot(pts(3,:),alpha) - dot(pts(2,:),alpha));
+    if maxC > 1 || maxC < 0 || isnan(maxC)
+        maxC = 1;
+    end
     
-    
-    % Determine parameters
-    a = 1; % q1-parameter to minimize curvature
-    b = 1; % q2-parameter to minimize curvature
-    c = 1; % q3-parameter to minimize curvature
+    % Determine parameters by minimizing curvature
+    a = 1; % q1-parameter
+    b = 1; % q2-parameter
+    c = 1; % q3-parameter
     
     % Determine control points
     Q(1,:) = pts(1,:); % q0 = p0
@@ -58,7 +66,7 @@ curve = [];
             bool = false;
         end
     end
-        
+
 
 
 
