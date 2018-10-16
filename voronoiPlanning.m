@@ -14,7 +14,7 @@ triangleCombinations = possibleCombinations(1:nObjects,3);
 [center, radius] = createCircumcircles(triangleCombinations, ptObject, nCombinations);
 
 % Remove points that are within circumcircles of triangles
-validCenter = makeDelaunay(ptObject, center, radius, nCombinations, nObjects);
+[validCenter, validCombinations] = makeDelaunay(ptObject, center, radius, nCombinations, nObjects, triangleCombinations);
 
 % Check
 x = ptObject(:,1); y = ptObject(:,2);
@@ -28,7 +28,7 @@ figure
 set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
 plot(ptObject(:,1), ptObject(:,2),'r*');
 hold on
-triplot(triangleCombinations, ptObject(:,1), ptObject(:,2));
+triplot(validCombinations, ptObject(:,1), ptObject(:,2));
 % viscircles([center(i,1) center(i,2)], radius(i)); %
 plot(validCenter(:,1), validCenter(:,2), 'g*')
 plot(c(:,1), c(:,2), 'd')
@@ -168,15 +168,17 @@ else
 end
 end
 
-function temp = makeDelaunay(ptObject, center, radius, nCombinations, nObjects)
+function [temp, combs] = makeDelaunay(ptObject, center, radius, nCombinations, nObjects, combs)
 temp = center;
 for i = 1:nCombinations
     for k = 1:nObjects
         distance = sqrt((center(i,1)-ptObject(k,1))^2+(center(i,2)-ptObject(k,2))^2);
         if round(distance,4) < round(abs(radius(i)),4)
             temp(i,:) = [0 0];
+            combs(i,:) = [0 0 0];
         end
     end
 end
 temp = temp(any(temp,2),:); % remove zero rows
+combs = combs(any(combs,2),:);
 end
