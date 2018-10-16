@@ -6,26 +6,12 @@ clear,clc;
 %   -> end node (int)ID
 % OUTPUT: List of nodes from start to end that together form the shortest path
 
-% %% Settings for random input
-% NN = 20; % number of nodes
-% NS = 30; % number of segments (must be bigger than NN)
-% startID = 1;
-% endID = randi(NN,1);
-
 %% Settings for n-by-n grid
-n = 7;
+n = 15;
 startID = 1;
 endID = randi(n^2,1);
 
 %% Input
-% nodesIN = [(1:6); [0 0 1 1 2 3]; [0 1 0 1 1 1]]';
-% segments = [(1:8); [1 1 1 2 3 3 4 5]; [2 3 4 4 4 5 5 6]]';
-% startID = 1;
-% endID = 6;
-
-% nodesIN = [(1:NN); 100*rand(2,NN)]';
-% segments = [(1:NS); floor(linspace(1,NN-1,NS)); ceil(linspace(2,NN,NS))]';
-
 nodesIN = zeros(n^2,3);
 nodesIN(:,1) = (1:n^2)';
 segments = zeros(2*n^2-2*n,3);
@@ -52,6 +38,7 @@ for i = 1:n
     end
 end
 
+%% Run function
 path = findShortestPath(nodesIN,segments,startID,endID);
 
 %% Plot the whole thing

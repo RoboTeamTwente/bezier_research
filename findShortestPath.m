@@ -1,10 +1,9 @@
 function [path] = findShortestPath(nodesIN, segments, startID, endID) 
-% INPUT: 
-%   -> list of nodes [(int)ID, (float)x, (float)y]
-%   -> list of segments [(int)ID, (int)Node1, (int)Node2] 
-%   -> start node (int)ID
-%   -> end node (int)ID
-% OUTPUT: Path with node ID's and coordinates from start to end
+% findShortestPath  Find the shortest path through a set of connected points.
+%    > nodesIN:    list of nodes [(int)ID, (float)x, (float)y].
+%    > segments:   list of segments [(int)ID, (float)x, (float)y].
+%    > startID:    ID of the node where to start at (int).
+%    > endID:      ID of the node where to end at (int).
 
 %% Setup
 numNodes = length(nodesIN(:,1));
