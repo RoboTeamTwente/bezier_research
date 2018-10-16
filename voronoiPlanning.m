@@ -8,7 +8,7 @@ ptObject = [20 30; 60 90; 10 45; 65 10; 90 60];
 [nObjects,~]=size(ptObject);
 
 % All triangles
-triangleCombinations = possibleCombinations(nObjects); 
+triangleCombinations = possibleCombinations(1:nObjects,3); 
 
 % Compute circumcircles
 [nCombinations,~] = size(triangleCombinations);
@@ -28,8 +28,8 @@ plot(ptObject(:,1), ptObject(:,2),'r*');
 hold on
 triplot(triangleCombinations, ptObject(:,1), ptObject(:,2));
 % triplot(rightCombinations,x,y);
-% plot(c(:,1),c(:,2),'m*');
 plot(center(:,1), center(:,2), 'g*')
+plot(c(:,1), c(:,2), 'd')
 xlim([0 100]); ylim([0 100]);
 grid on
 
@@ -85,20 +85,6 @@ function [vx,vy] = createVoronoi(x,y)
     vy = [vy ey];
 end
 
-function combs = possibleCombinations(nObjects)
-p = 1;
-for i = 1:nObjects
-    for k = 1:nObjects
-        for n = 1:nObjects
-            if i ~= k && i ~= n && k ~= n
-                combs(p, 1:3) = [i k n];
-                p = p + 1;
-            end
-        end
-    end
-end
-end
-
 function [center] = createCircumcircles(combs, ptObject, nCombinations)
 corners = ones(3,2);  
 center = ones(nCombinations,2);
@@ -142,7 +128,7 @@ end
 function [x, y] = lineLineIntersection(a, b, c, e, f, g)
     determinant = a*f - e*b; 
     if determinant == 0 
-        disp('Lines are parallel, abort mission')
+        disp('Lines are parallel, cannot calculate center')
         x = 0; y = 0;
     else
         x = (f*c - b*g)/determinant; 
@@ -150,5 +136,20 @@ function [x, y] = lineLineIntersection(a, b, c, e, f, g)
     end
 end
 
-
-
+function combs = possibleCombinations(v,m)
+v = v(:).'; % Make sure v is a row vector.
+n = length(v);
+if n == m
+    combs = v;
+elseif m == 1
+    combs = v.';
+else
+    combs = [];
+    if m < n && m > 1
+        for k = 1:n-m+1
+            Q = possibleCombinations(v(k+1:n),m-1);
+            combs = [combs; [v(ones(size(Q,1),1),k) Q]]; 
+        end
+    end
+end
+end
