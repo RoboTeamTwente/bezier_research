@@ -8,34 +8,26 @@ clear all; close all; clc;
 ptObject = [20 30; 60 90; 10 45; 65 10; 90 60];
 [nObjects,~]=size(ptObject);
 
-% Sort objects with increasing x
-sortedObjects = ones(nObjects,2);
-sortedObjects = sortObjects(ptObject, nObjects);
-
-% Divide objects
-groupA = [];
-groupB = [];
-[groupA, groupB] = divideObjects(sortedObjects, nObjects);
-
 % All triangles
-triangleCombinations = possibleCombinations(nObjects);
+triangleCombinations = possibleCombinations(1:nObjects, 3); % 3 corners in triangle
 
 % Compute circumcircles
-[radius, center] = createCircumcircles(triangleCombinations, sortedObjects, nObjects);
+[nCombinations,~] = size(triangleCombinations);
+[radius, center] = createCircumcircles(triangleCombinations, ptObject, nCombinations);
 
 % Check
-% x=ptObject(:,1); y=ptObject(:,2);
-% tri = delaunay(x,y);
-% tr = triangulation(tri,x,y);
-% c = tr.circumcenter();
+x = ptObject(:,1); y = ptObject(:,2);
+tri = delaunay(x,y);
+tr = triangulation(tri,x,y);
+c = tr.circumcenter();
 
 % Plot
-close all
+% close all
 figure
 set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
-plot(sortedObjects(:,1), sortedObjects(:,2),'r*');
+plot(ptObject(:,1), ptObject(:,2),'r*');
 hold on
-triplot(triangleCombinations, sortedObjects(:,1),sortedObjects(:,2));
+triplot(triangleCombinations, ptObject(:,1), ptObject(:,2));
 % triplot(rightCombinations,x,y);
 plot(c(:,1),c(:,2),'m*');
 plot(center(:,1), center(:,2), 'g*')
@@ -93,40 +85,7 @@ function [vx,vy] = createVoronoi(x,y)
     vy = [vy ey];
 end
 
-function sortedObjects = sortObjects(ptObject, nObjects)
-sortedObjects = ones(nObjects,2);
-    for i = 1:nObjects
-        [~, index] = max(ptObject(:,1));
-        if i == 1
-            sortedObjects(nObjects,:) = ptObject(index,:);
-        else
-            sortedObjects(nObjects+1-i,:) = ptObject(index,:);
-        end
-        ptObject(index,:) = [0 0];
-    end
-    
-    for i = 1:nObjects-1
-        if sortedObjects(i,1) == sortedObjects(i+1,1)
-            if sortedObjects(i,2) > sortedObjects(i+1,2)
-                sortedObjects([nObjects+i nObjects+i+1]) = sortedObjects([nObjects+i+1 nObjects+i]);
-            end
-        end
-    end
-end
-
-function [groupA, groupB] = divideObjects(sortedObjects, nObjects)
-    divisionNumber = nObjects/2;
-    if rem(nObjects, 2) == 0
-        groupA = sortedObjects(1:divisionNumber,:);
-        groupB = sortedObjects(divisionNumber+1:end,:);
-    else
-        groupA = sortedObjects(1:round(divisionNumber),:);
-        groupB = sortedObjects(round(divisionNumber)+1:end,:);
-    end
-end
-
-function combinations = possibleCombinations(v)
-m = 3; % Only three numbers necessary for a triangle
+function combinations = possibleCombinations(v,m)
 v = v(:).'; % Make sure v is a row vector.
 n = length(v);
 if n == m
@@ -144,15 +103,15 @@ else
 end
 end
 
-function [radius, center] = createCircumcircles(combinations, sortedObjects, nObjects)
+function [radius, center] = createCircumcircles(combinations, ptObject, nObjects)
 corners = ones(3,2);  
 radius = ones(nObjects,1);
 center = ones(nObjects,2);
     for i = 1:nObjects
         for k = 1:3
-            corners(k,:) = [sortedObjects(combinations(i,k),1), sortedObjects(combinations(i,k),2)];
+            corners(k,:) = [ptObject(combinations(i,k),1), ptObject(combinations(i,k),2)];
         end
-        a = sqrt((corners(2,1)-corners(1,1))^2+(corners(2,2)-corners(1,2))^2);
+        a = sqrt((corners(2,1)-corners(1,1))^2+(corners(2,2)-corners(1,2))^2); % triangle sides
         b = sqrt((corners(3,1)-corners(2,1))^2+(corners(3,2)-corners(2,2))^2);
         c = sqrt((corners(1,1)-corners(3,1))^2+(corners(1,2)-corners(3,1))^2);
         area = shoelace(corners);
