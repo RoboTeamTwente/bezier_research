@@ -1,7 +1,7 @@
 clear all; close all; clc;
 
 % TODO LIST
-% Choose right points out of the center matrix 
+% Make voronoi diagram
 
 ptObject = [20 30; 60 90; 10 45; 65 10; 90 60];
 [nObjects,~]=size(ptObject);
@@ -13,8 +13,8 @@ triangleCombinations = possibleCombinations(1:nObjects,3);
 [nCombinations,~] = size(triangleCombinations);
 [center, radius] = createCircumcircles(triangleCombinations, ptObject, nCombinations);
 
-% Remove points that are within circumcircles of other triangles
-
+% Remove points that are within circumcircles of triangles
+validCenter = makeDelaunay(ptObject, center, radius, nCombinations, nObjects);
 
 % Check
 x = ptObject(:,1); y = ptObject(:,2);
@@ -29,10 +29,10 @@ set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, sel
 plot(ptObject(:,1), ptObject(:,2),'r*');
 hold on
 triplot(triangleCombinations, ptObject(:,1), ptObject(:,2));
-% viscircles([center(1,1) center(1,2)], radius(1));
-% triplot(rightCombinations,x,y);
-plot(center(:,1), center(:,2), 'g*')
+% viscircles([center(i,1) center(i,2)], radius(i)); %
+plot(validCenter(:,1), validCenter(:,2), 'g*')
 plot(c(:,1), c(:,2), 'd')
+% plot(temp(:,1),temp(:,2),'d','MarkerEdgeColor','red') %
 xlim([0 100]); ylim([0 100]);
 grid on
 
@@ -166,4 +166,17 @@ else
         end
     end
 end
+end
+
+function temp = makeDelaunay(ptObject, center, radius, nCombinations, nObjects)
+temp = center;
+for i = 1:nCombinations
+    for k = 1:nObjects
+        distance = sqrt((center(i,1)-ptObject(k,1))^2+(center(i,2)-ptObject(k,2))^2);
+        if round(distance,4) < round(abs(radius(i)),4)
+            temp(i,:) = [0 0];
+        end
+    end
+end
+temp = temp(any(temp,2),:); % remove zero rows
 end
