@@ -9,7 +9,7 @@ ptObject = [20 30; 60 90; 10 45; 65 10; 90 60];
 [nObjects,~]=size(ptObject);
 
 % All triangles
-triangleCombinations = possibleCombinations(1:nObjects, 3); % 3 corners in triangle
+triangleCombinations = possibleCombinations(nObjects, 3); % 3 corners in triangle
 
 % Compute circumcircles
 [nCombinations,~] = size(triangleCombinations);
@@ -29,7 +29,7 @@ plot(ptObject(:,1), ptObject(:,2),'r*');
 hold on
 triplot(triangleCombinations, ptObject(:,1), ptObject(:,2));
 % triplot(rightCombinations,x,y);
-plot(c(:,1),c(:,2),'m*');
+% plot(c(:,1),c(:,2),'m*');
 plot(center(:,1), center(:,2), 'g*')
 xlim([0 100]); ylim([0 100]);
 
@@ -85,22 +85,21 @@ function [vx,vy] = createVoronoi(x,y)
     vy = [vy ey];
 end
 
-function combinations = possibleCombinations(v,m)
-v = v(:).'; % Make sure v is a row vector.
-n = length(v);
-if n == m
-    combinations = v;
-elseif m == 1
-    combinations = v.';
-else
-    combinations = [];
-    if m < n && m > 1
-        for k = 1:n-m+1
-            Q = possibleCombinations(v(k+1:n),m-1);
-            combinations = [combinations; [v(ones(size(Q,1),1),k) Q]]; 
+function combs = possibleCombinations(nObjects,m)
+p = 1;
+for i = 1:nObjects
+    for k = 1:nObjects
+        for n = 1:nObjects
+            combs(p,1:m) = [i k n];
+            if combs(p,m-2) == combs(p,m-1) || combs(p,m-2) == combs(p,m) ...
+                    || combs(p,m-2) == combs(p,m)
+                combs(p,1:m) = [0 0 0];
+            end
+            p = p + 1;
         end
     end
 end
+combs = combs(any(combs,2),:);
 end
 
 function [radius, center] = createCircumcircles(combinations, ptObject, nObjects)
