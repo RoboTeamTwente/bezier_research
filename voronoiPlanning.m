@@ -1,9 +1,8 @@
 clear all; close all; clc;
 
 % TODO LIST
-% choose right points out of the center matrix 
+% Choose right points out of the center matrix 
 
-%%
 ptObject = [20 30; 60 90; 10 45; 65 10; 90 60];
 [nObjects,~]=size(ptObject);
 
@@ -12,7 +11,7 @@ triangleCombinations = possibleCombinations(1:nObjects,3);
 
 % Compute circumcircles
 [nCombinations,~] = size(triangleCombinations);
-[center] = createCircumcircles(triangleCombinations, ptObject, nCombinations);
+[center, radius] = createCircumcircles(triangleCombinations, ptObject, nCombinations);
 
 % Check
 x = ptObject(:,1); y = ptObject(:,2);
@@ -85,9 +84,10 @@ function [vx,vy] = createVoronoi(x,y)
     vy = [vy ey];
 end
 
-function [center] = createCircumcircles(combs, ptObject, nCombinations)
+function [center, radius] = createCircumcircles(combs, ptObject, nCombinations)
 corners = ones(3,2);  
 center = ones(nCombinations,2);
+radius = ones(nCombinations,1);
     for i = 1:nCombinations
         for k = 1:3
             corners(k,:) = [ptObject(combs(i,k),1), ptObject(combs(i,k),2)];
@@ -95,6 +95,13 @@ center = ones(nCombinations,2);
     A = [corners(1,1) corners(1,2)];
     B = [corners(2,1) corners(2,2)];
     C = [corners(3,1) corners(3,2)];
+    
+    % Calculate radius
+    a = sqrt((corners(2,1)-corners(1,1))^2+(corners(2,2)-corners(1,2))^2);
+    b = sqrt((corners(3,1)-corners(2,1))^2+(corners(3,2)-corners(2,2))^2);
+    c = sqrt((corners(1,1)-corners(3,1))^2+(corners(1,2)-corners(3,1))^2);
+    area = shoelace(corners);
+    radius(i) = a * b * c / (4 * area);
     
     % Line AB is represented as ax + by = c 
     [a, b] = lineFromPoints(A, B);
@@ -108,6 +115,12 @@ center = ones(nCombinations,2);
     [x, y] = lineLineIntersection(a, b, c, e, f, g);
     center(i,:) = [x, y];
     end
+end
+
+function area = shoelace(corners) % shoelace formula
+    area = 0.5*(corners(1,1) * corners(2,2) + corners(2,1) * corners(3,2) + ...
+        corners(3,1) * corners(1,2) - corners(2,1) * corners(1,2) - ...
+        corners(3,1) * corners(2,2) - corners(1,1) * corners(3,2));
 end
 
 function [a, b, c] = lineFromPoints(A, B)
