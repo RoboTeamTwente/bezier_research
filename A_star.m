@@ -7,7 +7,7 @@ clear,clc;
 % OUTPUT: List of nodes from start to end that together form the shortest path
 
 %% Settings for n-by-n grid
-n = 15;
+n = 5;
 startID = 1;
 endID = randi(n^2,1);
 
