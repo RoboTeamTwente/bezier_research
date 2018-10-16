@@ -1,7 +1,6 @@
 clear all; close all; clc;
 
 % TODO LIST
-% all possible combinations in combination matrix
 % choose right points out of the center matrix 
 
 %%
@@ -22,16 +21,28 @@ tr = triangulation(tri,x,y);
 c = tr.circumcenter();
 
 % Plot
-% close all
+close all
 figure
 set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
+subplot(1,2,1)
 plot(ptObject(:,1), ptObject(:,2),'r*');
 hold on
 triplot(triangleCombinations, ptObject(:,1), ptObject(:,2));
 % triplot(rightCombinations,x,y);
 % plot(c(:,1),c(:,2),'m*');
+plot(center(25,1), center(25,2), 'g*')
+xlim([0 100]); ylim([0 100]);
+grid on
+
+subplot(1,2,2)
+plot(ptObject(:,1), ptObject(:,2),'r*');
+hold on
+triplot(triangleCombinations, ptObject(:,1), ptObject(:,2));
+% triplot(rightCombinations,x,y);
+plot(c(:,1),c(:,2),'m*');
 plot(center(:,1), center(:,2), 'g*')
 xlim([0 100]); ylim([0 100]);
+grid on
 
 %% Functions
 function [vx,vy] = createVoronoi(x,y)
@@ -90,25 +101,22 @@ p = 1;
 for i = 1:nObjects
     for k = 1:nObjects
         for n = 1:nObjects
-            combs(p,1:m) = [i k n];
-            if combs(p,m-2) == combs(p,m-1) || combs(p,m-2) == combs(p,m) ...
-                    || combs(p,m-2) == combs(p,m)
-                combs(p,1:m) = [0 0 0];
+            if i ~= k && i ~= n && k ~= n
+                combs(p, 1:3) = [i k n];
+                p = p + 1;
             end
-            p = p + 1;
         end
     end
 end
-combs = combs(any(combs,2),:);
 end
 
-function [radius, center] = createCircumcircles(combinations, ptObject, nObjects)
+function [radius, center] = createCircumcircles(combs, ptObject, nCombinations)
 corners = ones(3,2);  
-radius = ones(nObjects,1);
-center = ones(nObjects,2);
-    for i = 1:nObjects
+radius = ones(nCombinations,1);
+center = ones(nCombinations,2);
+    for i = 1:nCombinations
         for k = 1:3
-            corners(k,:) = [ptObject(combinations(i,k),1), ptObject(combinations(i,k),2)];
+            corners(k,:) = [ptObject(combs(i,k),1), ptObject(combs(i,k),2)];
         end
         a = sqrt((corners(2,1)-corners(1,1))^2+(corners(2,2)-corners(1,2))^2); % triangle sides
         b = sqrt((corners(3,1)-corners(2,1))^2+(corners(3,2)-corners(2,2))^2);
