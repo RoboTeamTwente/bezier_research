@@ -13,19 +13,23 @@ triangleCombinations = possibleCombinations(1:nObjects,3);
 [nCombinations,~] = size(triangleCombinations);
 [center, radius] = createCircumcircles(triangleCombinations, ptObject, nCombinations);
 
+% Remove points that are within circumcircles of other triangles
+
+
 % Check
 x = ptObject(:,1); y = ptObject(:,2);
 tri = delaunay(x,y);
 tr = triangulation(tri,x,y);
 c = tr.circumcenter();
 
-% Plot
+%% Plot
 close all
 figure
 set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
 plot(ptObject(:,1), ptObject(:,2),'r*');
 hold on
 triplot(triangleCombinations, ptObject(:,1), ptObject(:,2));
+% viscircles([center(1,1) center(1,2)], radius(1));
 % triplot(rightCombinations,x,y);
 plot(center(:,1), center(:,2), 'g*')
 plot(c(:,1), c(:,2), 'd')
@@ -96,13 +100,6 @@ radius = ones(nCombinations,1);
     B = [corners(2,1) corners(2,2)];
     C = [corners(3,1) corners(3,2)];
     
-    % Calculate radius
-    a = sqrt((corners(2,1)-corners(1,1))^2+(corners(2,2)-corners(1,2))^2);
-    b = sqrt((corners(3,1)-corners(2,1))^2+(corners(3,2)-corners(2,2))^2);
-    c = sqrt((corners(1,1)-corners(3,1))^2+(corners(1,2)-corners(3,1))^2);
-    area = shoelace(corners);
-    radius(i) = a * b * c / (4 * area);
-    
     % Line AB is represented as ax + by = c 
     [a, b] = lineFromPoints(A, B);
 
@@ -114,6 +111,10 @@ radius = ones(nCombinations,1);
 
     [x, y] = lineLineIntersection(a, b, c, e, f, g);
     center(i,:) = [x, y];
+    
+    % Calculate radius
+    radius(i) = sqrt((center(i,1)-corners(1,1))^2+(center(i,2)-corners(1,2))^2);
+    
     end
 end
 
