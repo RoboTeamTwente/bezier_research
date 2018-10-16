@@ -1,5 +1,9 @@
 clear all; close all; clc;
 
+% TODO LIST
+% all possible combinations in combination matrix
+% choose right points out of the center matrix 
+
 %%
 ptObject = [20 30; 60 90; 10 45; 65 10; 90 60];
 [nObjects,~]=size(ptObject);
@@ -19,15 +23,22 @@ triangleCombinations = possibleCombinations(nObjects);
 % Compute circumcircles
 [radius, center] = createCircumcircles(triangleCombinations, sortedObjects, nObjects);
 
-% close all
+% Check
+% x=ptObject(:,1); y=ptObject(:,2);
+% tri = delaunay(x,y);
+% tr = triangulation(tri,x,y);
+% c = tr.circumcenter();
+
+% Plot
+close all
 figure
 set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
-plot(sortedObjects(:,1),sortedObjects(:,2),'r*');
+plot(sortedObjects(:,1), sortedObjects(:,2),'r*');
 hold on
-% tri2=[1 2 3; 2 3 5; 2 4 5];
-triplot(triangleCombinations,sortedObjects(:,1),sortedObjects(:,2));
+triplot(triangleCombinations, sortedObjects(:,1),sortedObjects(:,2));
+% triplot(rightCombinations,x,y);
+plot(c(:,1),c(:,2),'m*');
 plot(center(:,1), center(:,2), 'g*')
-% % triplot(tri,x,y,'g');
 xlim([0 100]); ylim([0 100]);
 
 %% Functions
@@ -114,17 +125,23 @@ function [groupA, groupB] = divideObjects(sortedObjects, nObjects)
     end
 end
 
-function combinations = possibleCombinations(nObjects)
-combinations = ones(nObjects,3);
-    for i = 1:nObjects
-        for k = 1:3
-            value = i+k-1;
-            if value > nObjects
-                value = value - nObjects;
-            end
-            combinations(i,k) = value;
+function combinations = possibleCombinations(v)
+m = 3; % Only three numbers necessary for a triangle
+v = v(:).'; % Make sure v is a row vector.
+n = length(v);
+if n == m
+    combinations = v;
+elseif m == 1
+    combinations = v.';
+else
+    combinations = [];
+    if m < n && m > 1
+        for k = 1:n-m+1
+            Q = possibleCombinations(v(k+1:n),m-1);
+            combinations = [combinations; [v(ones(size(Q,1),1),k) Q]]; 
         end
     end
+end
 end
 
 function [radius, center] = createCircumcircles(combinations, sortedObjects, nObjects)
@@ -155,4 +172,6 @@ function area = shoelace(corners) % shoelace formula
         corners(3,1) * corners(1,2) - corners(2,1) * corners(1,2) - ...
         corners(3,1) * corners(2,2) - corners(1,1) * corners(3,2));
 end
+
+
 
