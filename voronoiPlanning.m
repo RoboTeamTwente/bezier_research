@@ -8,11 +8,11 @@ ptObject = [20 30; 60 90; 10 45; 65 10; 90 60];
 [nObjects,~]=size(ptObject);
 
 % All triangles
-triangleCombinations = possibleCombinations(nObjects, 3); % 3 corners in triangle
+triangleCombinations = possibleCombinations(nObjects); 
 
 % Compute circumcircles
 [nCombinations,~] = size(triangleCombinations);
-[radius, center] = createCircumcircles(triangleCombinations, ptObject, nCombinations);
+[center] = createCircumcircles(triangleCombinations, ptObject, nCombinations);
 
 % Check
 x = ptObject(:,1); y = ptObject(:,2);
@@ -24,22 +24,11 @@ c = tr.circumcenter();
 close all
 figure
 set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
-subplot(1,2,1)
 plot(ptObject(:,1), ptObject(:,2),'r*');
 hold on
 triplot(triangleCombinations, ptObject(:,1), ptObject(:,2));
 % triplot(rightCombinations,x,y);
 % plot(c(:,1),c(:,2),'m*');
-plot(center(25,1), center(25,2), 'g*')
-xlim([0 100]); ylim([0 100]);
-grid on
-
-subplot(1,2,2)
-plot(ptObject(:,1), ptObject(:,2),'r*');
-hold on
-triplot(triangleCombinations, ptObject(:,1), ptObject(:,2));
-% triplot(rightCombinations,x,y);
-plot(c(:,1),c(:,2),'m*');
 plot(center(:,1), center(:,2), 'g*')
 xlim([0 100]); ylim([0 100]);
 grid on
@@ -96,7 +85,7 @@ function [vx,vy] = createVoronoi(x,y)
     vy = [vy ey];
 end
 
-function combs = possibleCombinations(nObjects,m)
+function combs = possibleCombinations(nObjects)
 p = 1;
 for i = 1:nObjects
     for k = 1:nObjects
@@ -110,33 +99,55 @@ for i = 1:nObjects
 end
 end
 
-function [radius, center] = createCircumcircles(combs, ptObject, nCombinations)
+function [center] = createCircumcircles(combs, ptObject, nCombinations)
 corners = ones(3,2);  
-radius = ones(nCombinations,1);
 center = ones(nCombinations,2);
     for i = 1:nCombinations
         for k = 1:3
             corners(k,:) = [ptObject(combs(i,k),1), ptObject(combs(i,k),2)];
         end
-        a = sqrt((corners(2,1)-corners(1,1))^2+(corners(2,2)-corners(1,2))^2); % triangle sides
-        b = sqrt((corners(3,1)-corners(2,1))^2+(corners(3,2)-corners(2,2))^2);
-        c = sqrt((corners(1,1)-corners(3,1))^2+(corners(1,2)-corners(3,1))^2);
-        area = shoelace(corners);
-%         area = 0.5*(corners(1,1) * corners(2,2) + corners(2,1) * corners(3,2) + ...
-%         corners(3,1) * corners(1,2) - corners(2,1) * corners(1,2) - ...
-%         corners(3,1) * corners(2,2) - corners(1,1) * corners(3,2));
-        radius(i,1) = a * b * c / (4 * area);
-        barCenter = [a^2 * (b^2 + c^2 -a^2), b^2 * (c^2 + a^2 - b^2), c^2 * (a^2 + b^2 - c^2)];
-        almostCenter = barCenter(1) * corners(1,:) + barCenter(2) * corners(2,:) + barCenter(3) * corners(3,:);
-        % This is not the right name but ok
-        center(i,:) = almostCenter/sum(barCenter);
+    A = [corners(1,1) corners(1,2)];
+    B = [corners(2,1) corners(2,2)];
+    C = [corners(3,1) corners(3,2)];
+    
+    % Line AB is represented as ax + by = c 
+    [a, b] = lineFromPoints(A, B);
+
+    % Line BC is represented as ex + fy = g 
+    [e, f] = lineFromPoints(B, C);
+
+    [a, b, c] = perpendicularBisectorFromLine(A, B, a, b); 
+    [e, f, g] = perpendicularBisectorFromLine(B, C, e, f);
+
+    [x, y] = lineLineIntersection(a, b, c, e, f, g);
+    center(i,:) = [x, y];
     end
 end
 
-function area = shoelace(corners) % shoelace formula
-    area = 0.5*(corners(1,1) * corners(2,2) + corners(2,1) * corners(3,2) + ...
-        corners(3,1) * corners(1,2) - corners(2,1) * corners(1,2) - ...
-        corners(3,1) * corners(2,2) - corners(1,1) * corners(3,2));
+function [a, b, c] = lineFromPoints(A, B)
+    a = B(1,2) - A(1,2);
+    b = A(1,1) - B(1,1);
+    c = a*(A(1,1)) + b*(A(1,2));
+end
+
+function [a, b, c] = perpendicularBisectorFromLine(A, B, a, b)
+    midPoint = [(A(1) + B(1))/2 (A(2) + B(2))/2];
+    % c = -bx + ay 
+    c = -b * (midPoint(1)) + a * (midPoint(2));
+    temp = a;
+    a = -b;
+    b = temp;
+end
+
+function [x, y] = lineLineIntersection(a, b, c, e, f, g)
+    determinant = a*f - e*b; 
+    if determinant == 0 
+        disp('Lines are parallel, abort mission')
+        x = 0; y = 0;
+    else
+        x = (f*c - b*g)/determinant; 
+        y = (a*g - e*c)/determinant; 
+    end
 end
 
 
