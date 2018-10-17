@@ -3,6 +3,7 @@ clear all; close all; clc;
 % TODO LIST
 % Not use MATLAB function 'boundary'
 
+fieldSize = [1200 900];
 ptObject = [20 30; 60 90; 10 45; 65 10; 90 60]; 
 x = ptObject(:,1); y = ptObject(:,2);
 [nObjects,~]=size(ptObject);
@@ -17,6 +18,7 @@ triangleCombinations = possibleCombinations(1:nObjects,3);
 % Receive delaunay points + combinations
 [validCenter, validCombinations] = makeDelaunay(ptObject, center, radius, nCombinations, nObjects, triangleCombinations);
 sortedCenter = sortCenter(validCenter);
+[nCombinations,~] = size(validCenter);
 
 % Create boundary polygon
 k = boundary(x,y,0); % not okay
@@ -37,13 +39,13 @@ c = tr.circumcenter();
 close all
 figure
 set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
-% plot(ptObject(:,1), ptObject(:,2),'r*');
+plot(ptObject(:,1), ptObject(:,2),'r*');
 hold on
 triplot(validCombinations, ptObject(:,1), ptObject(:,2));
 % viscircles([center(i,1) center(i,2)], radius(i)); %
 plot(validCenter(:,1), validCenter(:,2), 'g*')
 plot(c(:,1), c(:,2), 'd')
-plot(x,y,'r*',vx,vy,'m-')
+plot(vx,vy,'m-')
 % plot(temp(:,1),temp(:,2),'d','MarkerEdgeColor','red') %
 xlim([0 100]); ylim([0 100]);
 grid on
@@ -171,3 +173,17 @@ function midPoint = calculateMid(x,y,k)
     end
 end
 
+function [cx, cy] = centerLines(nCombinations, sortedCenter)
+vxnew = [];
+vynew = [];
+    for i = 1:nCombinations
+        if i ~= nCombinations
+            vxnew(1,i) = sortedCenter(i,1);
+            vynew(1,i) = sortedCenter(i,2);
+        end
+        if i ~= 1 
+            vxnew(2,i-1) = sortedCenter(i,1);
+            vynew(2,i-1) = sortedCenter(i,2);
+        end
+    end
+end
