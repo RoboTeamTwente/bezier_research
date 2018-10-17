@@ -2,9 +2,12 @@ clear all; close all; clc;
 
 % TODO LIST
 % Not use MATLAB function 'boundary'
+% Lines to infinity
+% x coordinate sorting is NOT the best option
+% Remove lines inside polygons created by cicumcenter polygons
 
 fieldSize = [1200 900];
-ptObject = [20 30; 60 90; 10 45; 65 10; 90 60]; 
+ptObject = [20 30; 50 70; 60 20; 80 50; 30 60; 80 10]; 
 x = ptObject(:,1); y = ptObject(:,2);
 [nObjects,~]=size(ptObject);
 
@@ -35,16 +38,7 @@ vx = ones(2,nCombinations - 1 + nMidpoints); vy = vx;
 closestPoint = findClosest(nMidpoints, nCombinations, validCenter, midPoint);
 
 % Add midpoints and closest points to vx & vy
-[vx, vy] = addRemain(vx, vy, midPoint, closestPoint, nMidpoints, nCombinations)
-
-% Make voronoi
-% [vx, vy] = createVoronoi(validCenter, validCombinations, nObjects, ptObject);  
-
-% Check
-% tri = delaunay(x,y);
-% tr = triangulation(tri,x,y);
-% c = tr.circumcenter();
-% [vx, vy] = voronoi(x,y);
+[vx, vy] = addRemain(vx, vy, midPoint, closestPoint, nMidpoints, nCombinations);
 
 %% Plot
 close all
@@ -53,11 +47,8 @@ set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, sel
 plot(ptObject(:,1), ptObject(:,2),'r*');
 hold on
 triplot(validCombinations, ptObject(:,1), ptObject(:,2));
-% viscircles([center(i,1) center(i,2)], radius(i)); %
 plot(validCenter(:,1), validCenter(:,2), 'g*')
-% plot(c(:,1), c(:,2), 'd')
 plot(vx,vy,'m-')
-% plot(temp(:,1),temp(:,2),'d','MarkerEdgeColor','red') %
 xlim([0 100]); ylim([0 100]);
 grid on
 
@@ -186,13 +177,15 @@ end
 
 function [cx, cy] = centerLines(nCombinations, sortedCenter, cx, cy)
     for i = 1:nCombinations
-        if i ~= nCombinations
             cx(1,i) = sortedCenter(i,1);
             cy(1,i) = sortedCenter(i,2);
-        end
         if i ~= 1 
             cx(2,i-1) = sortedCenter(i,1);
             cy(2,i-1) = sortedCenter(i,2);
+        end
+        if i == nCombinations
+            cx(2,i) = sortedCenter(1,1);
+            cy(2,i) = sortedCenter(1,2);
         end
     end
 end
@@ -210,9 +203,9 @@ end
 
 function [vx, vy] = addRemain(vx, vy, midPoint, closestPoint, nMidpoints, nCombinations)
     for i = 1:nMidpoints
-        vx(1,i + nCombinations - 1) = midPoint(i,1);
-        vx(2,i + nCombinations - 1) = closestPoint(i,1);
-        vy(1,i + nCombinations - 1) = midPoint(i,2);
-        vy(2,i + nCombinations - 1) = closestPoint(i,2);
+        vx(1,i + nCombinations) = midPoint(i,1);
+        vx(2,i + nCombinations) = closestPoint(i,1);
+        vy(1,i + nCombinations) = midPoint(i,2);
+        vy(2,i + nCombinations) = closestPoint(i,2);
     end       
 end
