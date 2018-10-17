@@ -1,9 +1,10 @@
 clear all; close all; clc;
 
 % TODO LIST
-% Make voronoi diagram
+% Not use MATLAB function 'boundary'
 
 ptObject = [20 30; 60 90; 10 45; 65 10; 90 60]; 
+x = ptObject(:,1); y = ptObject(:,2);
 [nObjects,~]=size(ptObject);
 
 % All triangles
@@ -17,11 +18,16 @@ triangleCombinations = possibleCombinations(1:nObjects,3);
 [validCenter, validCombinations] = makeDelaunay(ptObject, center, radius, nCombinations, nObjects, triangleCombinations);
 sortedCenter = sortCenter(validCenter);
 
+% Create boundary polygon
+k = boundary(x,y,0); % not okay
+
+% Calculate middle points on polygon
+midPoint = calculateMid(x,y,k);
+
 % Make voronoi
 % [vx, vy] = createVoronoi(validCenter, validCombinations, nObjects, ptObject);  
 
 % Check
-x = ptObject(:,1); y = ptObject(:,2);
 tri = delaunay(x,y);
 tr = triangulation(tri,x,y);
 c = tr.circumcenter();
@@ -31,70 +37,18 @@ c = tr.circumcenter();
 close all
 figure
 set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
-subplot(1,2,1)
-plot(ptObject(:,1), ptObject(:,2),'r*');
+% plot(ptObject(:,1), ptObject(:,2),'r*');
 hold on
 triplot(validCombinations, ptObject(:,1), ptObject(:,2));
 % viscircles([center(i,1) center(i,2)], radius(i)); %
 plot(validCenter(:,1), validCenter(:,2), 'g*')
 plot(c(:,1), c(:,2), 'd')
+plot(x,y,'r*',vx,vy,'m-')
 % plot(temp(:,1),temp(:,2),'d','MarkerEdgeColor','red') %
 xlim([0 100]); ylim([0 100]);
 grid on
 
-subplot(1,2,2)
-plot(x,y,'r+',vx,vy,'b-')
 %% Functions
-function [vx,vy] = createVoronoi(validCenter, validCombinations, nObjects, ptObject)    
-    x = ptObject(:,1);
-    y = ptObject(:,2);
-    % Create matrix T where i and j are endpoints of edge of triangle T(i,j)
-    n = nObjects;
-    t = repmat((1:size(validCombinations,1))',1,3);
-    T = sparse(validCombinations,validCombinations(:,[3 1 2]),t,n,n); 
-
-    % i and j are endpoints of internal edge in triangle E(i,j)
-    E = (T & T').*T; 
-    % i and j are endpoints of external edge in triangle F(i,j)
-    F = xor(T, T').*T;
-
-    % v and vv are triangles that share an edge
-    [~,~,v] = find(triu(E));
-    [~,~,vv] = find(triu(E'));
-
-    % Internal edges
-    vx = [validCenter(v,1) validCenter(vv,1)]';
-    vy = [validCenter(v,2) validCenter(vv,2)]';
-
-    % Compute lines-to-infinity
-    % i and j are endpoints of the edges of triangles in z
-    [i,j,z] = find(F);
-
-    % Counter-clockwise components of lines between endpoints
-    dx = x(j) - x(i);
-    dy = y(j) - y(i);
-
-    % Calculate scaling factor for length of line-to-infinity
-    % Distance across range of data
-    rx = max(x)-min(x); 
-    ry = max(y)-min(y);
-    % Distance from vertex to center of data
-    cx = (max(x)+min(x))/2 - validCenter(z,1); 
-    cy = (max(y)+min(y))/2 - validCenter(z,2);
-    % Sum of these two distances
-    nm = sqrt(rx.*rx + ry.*ry) + sqrt(cx.*cx + cy.*cy);
-    % Compute scaling factor
-    scale = nm./sqrt((dx.*dx+dy.*dy));
-
-    % Lines from voronoi vertex to "infinite" endpoint
-    % We know it's in correct direction because compononents are CCW
-    ex = [c(z,1) c(z,1)-dy.*scale]';
-    ey = [c(z,2) c(z,2)+dx.*scale]';
-    % Combine with internal edges
-    vx = [vx ex];
-    vy = [vy ey];
-end
-
 function [center, radius] = createCircumcircles(combs, ptObject, nCombinations)
 corners = ones(3,2);  
 center = ones(nCombinations,2);
@@ -208,6 +162,12 @@ function sorted = sortCenter(validCenter)
                 sorted([n+i n+i+1]) = sorted([n+i+1 n+i]);
             end
         end
+    end
+end
+
+function midPoint = calculateMid(x,y,k)
+    for i = 1:length(k)-1
+        midPoint(i,:) =  [(x(k(i))+x(k(i+1)))/2 (y(k(i))+y(k(i+1)))/2];
     end
 end
 
