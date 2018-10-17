@@ -25,15 +25,26 @@ k = boundary(x,y,0); % not okay
 
 % Calculate middle points on polygon
 midPoint = calculateMid(x,y,k);
+[nMidpoints,~] = size(midPoint);
+
+% Make vx & vy
+vx = ones(2,nCombinations - 1 + nMidpoints); vy = vx;
+[vx, vy] = centerLines(nCombinations, sortedCenter, vx, vy);
+
+% Find closest center points to mid points
+closestPoint = findClosest(nMidpoints, nCombinations, validCenter, midPoint);
+
+% Add midpoints and closest points to vx & vy
+[vx, vy] = addRemain(vx, vy, midPoint, closestPoint, nMidpoints, nCombinations)
 
 % Make voronoi
 % [vx, vy] = createVoronoi(validCenter, validCombinations, nObjects, ptObject);  
 
 % Check
-tri = delaunay(x,y);
-tr = triangulation(tri,x,y);
-c = tr.circumcenter();
-[vx, vy] = voronoi(x,y);
+% tri = delaunay(x,y);
+% tr = triangulation(tri,x,y);
+% c = tr.circumcenter();
+% [vx, vy] = voronoi(x,y);
 
 %% Plot
 close all
@@ -44,7 +55,7 @@ hold on
 triplot(validCombinations, ptObject(:,1), ptObject(:,2));
 % viscircles([center(i,1) center(i,2)], radius(i)); %
 plot(validCenter(:,1), validCenter(:,2), 'g*')
-plot(c(:,1), c(:,2), 'd')
+% plot(c(:,1), c(:,2), 'd')
 plot(vx,vy,'m-')
 % plot(temp(:,1),temp(:,2),'d','MarkerEdgeColor','red') %
 xlim([0 100]); ylim([0 100]);
@@ -173,17 +184,35 @@ function midPoint = calculateMid(x,y,k)
     end
 end
 
-function [cx, cy] = centerLines(nCombinations, sortedCenter)
-vxnew = [];
-vynew = [];
+function [cx, cy] = centerLines(nCombinations, sortedCenter, cx, cy)
     for i = 1:nCombinations
         if i ~= nCombinations
-            vxnew(1,i) = sortedCenter(i,1);
-            vynew(1,i) = sortedCenter(i,2);
+            cx(1,i) = sortedCenter(i,1);
+            cy(1,i) = sortedCenter(i,2);
         end
         if i ~= 1 
-            vxnew(2,i-1) = sortedCenter(i,1);
-            vynew(2,i-1) = sortedCenter(i,2);
+            cx(2,i-1) = sortedCenter(i,1);
+            cy(2,i-1) = sortedCenter(i,2);
         end
     end
+end
+
+function closestPoint = findClosest(nMidpoints, nCombinations, validCenter, midPoint)
+closestPoint = [];
+    for i = 1:nMidpoints
+        for k = 1:nCombinations
+            distance(k) = sqrt((validCenter(k,1) - midPoint(i,1))^2 + (validCenter(k,2) - midPoint(i,2))^2);
+        end
+        [~,index] = min(distance);
+        closestPoint(i,:) = [validCenter(index,1) validCenter(index,2)]; 
+    end
+end
+
+function [vx, vy] = addRemain(vx, vy, midPoint, closestPoint, nMidpoints, nCombinations)
+    for i = 1:nMidpoints
+        vx(1,i + nCombinations - 1) = midPoint(i,1);
+        vx(2,i + nCombinations - 1) = closestPoint(i,1);
+        vy(1,i + nCombinations - 1) = midPoint(i,2);
+        vy(2,i + nCombinations - 1) = closestPoint(i,2);
+    end       
 end
