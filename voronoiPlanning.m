@@ -7,14 +7,17 @@ clear all; close all; clc;
 % Remove lines inside polygons created by cicumcenter polygons
 % Remove lines to boundary points if points are outside of boundary
 
-% fieldSize = [1200 900]; % size of the field: x y
-% fieldCoordinates = [fieldSize(1) fieldSize(2); ...
-%     fieldSize(1) -fieldSize(2); -fieldSize(1) fieldSize(2); ...
-%     -fieldSize(1) -fieldSize(2)]/2;
-% nObjects = 3; % used for testing stuff
-% obj = [randn(nObjects,1)*fieldSize(1)/2 randn(nObjects,1)*fieldSize(2)/2];
-% ptObject = [fieldCoordinates; obj];
-ptObject = [0 0; 100 100; 0 100; 100 0; 30 40; 50 80; 35 70];
+%% 
+fieldSize = [1200 900]; % size of the field: x y
+fieldCoordinates = [fieldSize(1) fieldSize(2); ...
+    fieldSize(1) -fieldSize(2); -fieldSize(1) fieldSize(2); ...
+    -fieldSize(1) -fieldSize(2)]/2;
+nObjects = 3; % used for testing stuff
+obj = [rand(nObjects,1)*(fieldSize(1)/2) rand(nObjects,1)*(fieldSize(2)/2)];
+ptObject = [fieldCoordinates; obj];
+% ptObject = [0 0; 100 100; 0 100; 100 0; 30 40; 50 80; 35 70];
+ptStart = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)];
+startOrientationAngle=0.5*pi; % 0-2pi
 x = ptObject(:,1); y = ptObject(:,2);
 [nObjects,~]=size(ptObject); % this one should be used for real
 
@@ -38,7 +41,7 @@ midPoint = calculateMid(x,y,k);
 [nMidpoints,~] = size(midPoint);
 
 % Make vx & vy
-vx = ones(2,nCombinations - 1 + nMidpoints); vy = vx;
+vx = ones(2, nCombinations - 1 + nMidpoints); vy = vx;
 [vx, vy] = centerLines(nCombinations, sortedCenter, vx, vy);
 
 % Find closest center points to mid points
@@ -54,9 +57,10 @@ set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, sel
 plot(ptObject(:,1), ptObject(:,2),'r*');
 hold on
 triplot(validCombinations, ptObject(:,1), ptObject(:,2));
-plot(validCenter(:,1), validCenter(:,2), 'g*')
+plot(validCenter(:,1), validCenter(:,2), 'k*')
 % plot(vx,vy,'m-')
-xlim([-10 110]); ylim([-10 110]);
+plot(ptStart(1),ptStart(2),'g*');
+xlim([-fieldSize(1)/2-50 fieldSize(1)/2+50]); ylim([-fieldSize(2)/2-50 fieldSize(2)/2+50]);
 grid on
 
 %% Functions
