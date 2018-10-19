@@ -1,16 +1,16 @@
 function [curve,Q] = createBezierCurve(path,v0,obst)
 % Takes in a path with points and spits out a smooth curve passed these
 % points.
-% -> v0:    initial velocity vector
+% -> v0:    initial velocity struct (amp, theta)
 % -> obst:  list containing obstacles
 
-% TODO: What if the minimum curvature is still too high? (Case 1)
+% TODO: What if the minimum curvature is still too high? 
 
 if isempty(path) || length(path(:,1)) < 3
     disp('Please insert a path of at least 3 points.');
 end
 
-% Case I:   p0, p1, p2 are collinear, v0 is co-directional to p1-p0
+% Case I:   v0 is too low (~0)
 % Case II:  q1 is to the opposite side of p0p1 as p2
 % Case III: q1 is to the same side of p0p1 as p2. p0p1 can not intersect
 %   p1p2 without intersecting an obstacle (convex)
@@ -19,16 +19,18 @@ end
 Q = zeros(4,2); % control points
 pts = path(:,2:3); % path points [X, Y]
 
-distObstToV0 = abs(v0(2)/v0(1)*obst.x - obst.y + pts(1,2) - v0(2)/v0(1)*pts(1,1)) / sqrt((v0(2)/v0(1))^2 + 1);
+obstVec = [obst.x, obst.y];
+v0UVec = [cos(v0.theta), sin(v0.theta)];
+distObstToV0 = norm((pts(1,:)-obstVec) - dot(pts(1,:)-obstVec,v0UVec)*v0UVec);
 angDiff = abs(angleOf(pts(2,:)-pts(1,:)) - angleOf(pts(3,:)-pts(1,:))); % angle between p0p1 and p0p2
-if abs(angleOf(v0)-angleOf(pts(2,:)-pts(1,:))) < angDiff && abs(angleOf(v0)-angleOf(pts(3,:)-pts(1,:))) < angDiff && distObstToV0 > obst.radius
+if abs(v0.theta-angleOf(pts(2,:)-pts(1,:))) < angDiff && abs(v0.theta-angleOf(pts(3,:)-pts(1,:))) < angDiff && distObstToV0 > obst.radius
     % condition 1: p0+t*v0 must intersect with line segment p1p2
     % condition 2: p0+t*v0 cannot intersect with an obstacle
     
     %% Case IV    
-    % max_q2 is computed such that p0p1max_q3 is the biggest triangle not
+    % max_q2 is computed such that p0p1max_q2 is the biggest triangle not
     %   intersecting an obstacle.
-    p0ToObstacle = [obst.x, obst.y] - pts(1,:);
+    p0ToObstacle = obstVec - pts(1,:);
     rotDir = (atan2(pts(2,2),pts(2,1))-atan2(obst.y,obst.x)) / abs(atan2(pts(2,2),pts(2,1))-atan2(obst.y,obst.x)); % direction in which to rotate the vecToObst
     rotAng = rotDir*asin(obst.radius/norm(p0ToObstacle)); % angle to rotate p0ToObstacle by
     p0ToQ2 = p0ToObstacle * [cos(rotAng), sin(rotAng); -sin(rotAng), cos(rotAng)];
@@ -39,26 +41,28 @@ if abs(angleOf(v0)-angleOf(pts(2,:)-pts(1,:))) < angDiff && abs(angleOf(v0)-angl
     end
     max_q2 = pts(2,:) + s*(pts(3,:)-pts(2,:));
     
-    p1p2_3D = [pts(3,:)-pts(2,:), 0]; % convert to 3D vector for cross product
-    p0p1_3D = [pts(2,:)-pts(1,:), 0]; % convert to 3D vector for cross product
-    v0_3D = [v0, 0]; % convert to 3D vector for cross product
+    s = (pts(2,2)-pts(1,2) - tan(v0.theta)*(pts(2,1)-pts(1,1))) / (tan(v0.theta)*(pts(3,1)-pts(2,1)) - (pts(3,2)-pts(2,2)));
     
     % only parameter to minimize curvature
     b = 0.5;
     
-    Q(2,:) = pts(1,:) + v0 * norm(cross(p1p2_3D,p0p1_3D)) / norm(cross(p1p2_3D,v0_3D));
+    Q(2,:) = pts(2,:) + s*(pts(3,:)-pts(2,:));
     Q(3,:) = Q(2,:) + b*(max_q2-Q(2,:));
     Q(4,:) = []; % only 3 control points needed
     disp('case IV')
-elseif onSameSide(pts,v0)
+elseif onSameSide(pts,v0UVec)
     %% Case III
-    % Determine maxes for parameters (only #3 atm)
+    % Determine maxes for parameters
     % max_q1 lays on the edge of the voronoi diagram on the line p0 + t*v0
-    max_q1 = pts(1,:) + 0.5*norm([obst.x, obst.y]-pts(1,:))^2/dot(v0,[obst.x, obst.y]-pts(1,:)) * v0; % assuming the voronoi edge is with the obstacle
-    
+    if round(v0.amp) == 0 % TODO: should be limited, not rounded
+        max_q1 = pts(1,:) + 3*v0UVec; % for orientation, constant could be used to control acceleration
+    else
+        max_q1 = pts(1,:) + 0.5*norm([obst.x, obst.y]-pts(1,:))^2/dot(v0UVec,[obst.x, obst.y]-pts(1,:)) * v0UVec; % assuming the voronoi edge is with the obstacle
+    end
+    % max_q2 is equal to max_q3
     % max_q3 is computed such that max_q1p1max_q3 is the biggest triangle not
     %   intersecting an obstacle.
-    max_q1ToObstacle = [obst.x, obst.y] - max_q1;
+    max_q1ToObstacle = obstVec - max_q1;
     rotDir = (atan2(pts(2,2),pts(2,1))-atan2(obst.y,obst.x)) / abs(atan2(pts(2,2),pts(2,1))-atan2(obst.y,obst.x)); % direction in which to rotate the vecToObst
     rotAng = rotDir*asin(obst.radius/norm(max_q1ToObstacle)); % angle to rotate p0ToObstacle by
     max_q1ToQ3 = max_q1ToObstacle * [cos(rotAng), sin(rotAng); -sin(rotAng), cos(rotAng)];
@@ -73,7 +77,7 @@ elseif onSameSide(pts,v0)
     % Determine parameters by minimizing curvature
     a = 0.5; % q1-parameter; interval [0,1]
     b = 0.2; % q2-parameter; interval [0,1]
-    c = 0.5; % q3-parameter; interval [0,1]
+    c = 0.8; % q3-parameter; interval [0,1]
     
     % Determine control points
     Q(1,:) = pts(1,:); % q0 = p0
@@ -84,14 +88,18 @@ elseif onSameSide(pts,v0)
     disp('case III')
 else
     %% Case II
-    % Determine maxes for parameters (only #3 atm)
+    % Determine maxes for parameters
     % max_q2 and max_q1 lay on the edges of the voronoi diagram
-    max_q1 = pts(1,:) + 2 * v0/norm(v0); % TODO: incorporate Voronoi
+    if round(v0.amp) == 0 % TODO: should be limited, not rounded
+        max_q1 = pts(1,:) + 3*v0UVec; % for orientation, constant could be used to control acceleration
+    else
+        max_q1 = pts(1,:) + v0.amp*v0UVec; % TODO: incorporate Voronoi
+    end
     max_q2 = pts(2,:) - 2 * (pts(3,:)-pts(2,:))/norm(pts(3,:)-pts(2,:)); % TODO: incorporate Voronoi
     
     % max_q3 is computed such that p0p1max_q3 is the biggest triangle not
     %   intersecting an obstacle.
-    p0ToObstacle = [obst.x, obst.y] - pts(1,:);
+    p0ToObstacle = obstVec - pts(1,:);
     rotDir = (atan2(pts(2,2),pts(2,1))-atan2(obst.y,obst.x)) / abs(atan2(pts(2,2),pts(2,1))-atan2(obst.y,obst.x)); % direction in which to rotate the vecToObst
     rotAng = rotDir*asin(obst.radius/norm(p0ToObstacle)); % angle to rotate p0ToObstacle by
     p0ToQ3 = p0ToObstacle * [cos(rotAng), sin(rotAng); -sin(rotAng), cos(rotAng)];
@@ -114,6 +122,9 @@ else
     Q(4,:) = pts(2,:) + c*(max_q3-pts(2,:)); % q3 = p1 + c*(max_q3-p1)
     
     disp('case II')
+end
+if round(v0.amp) == 0 % TODO: should be limited, not rounded
+    Q = [Q(1,:); Q(1,:); Q(2:end,:)];
 end
 curve = points2Curve(Q);
 
