@@ -10,16 +10,16 @@ clear all; close all; clc;
 %% 
 fieldSize = [1200 900]; % size of the field: x y
 fieldCoordinates = [fieldSize(1) fieldSize(2); ...
-    fieldSize(1) -fieldSize(2); -fieldSize(1) fieldSize(2); ...
-    -fieldSize(1) -fieldSize(2)]/2;
+    -fieldSize(1) fieldSize(2); -fieldSize(1) -fieldSize(2); ...
+    fieldSize(1) -fieldSize(2)]/2;
 nObjects = 3; % used for testing stuff
 obj = [rand(nObjects,1)*(fieldSize(1)/2) rand(nObjects,1)*(fieldSize(2)/2)];
 ptObject = [fieldCoordinates; obj];
 % ptObject = [0 0; 100 100; 0 100; 100 0; 30 40; 50 80; 35 70];
 ptStart = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)];
-startOrientationAngle=0.5*pi; % 0-2pi
+startOrientationAngle=rand(1,1)*2*pi; % 0-2pi
 x = ptObject(:,1); y = ptObject(:,2);
-[nObjects,~]=size(ptObject); % this one should be used for real
+[nObjects,~]=size(ptObject); % this one should be used for real stuff
 
 % All triangles
 triangleCombinations = possibleCombinations(1:nObjects,3); 
@@ -33,8 +33,11 @@ triangleCombinations = possibleCombinations(1:nObjects,3);
 sortedCenter = sortCenter(validCenter);
 [nCombinations,~] = size(validCenter);
 
+% Find adjacent triangles
+adjacentTriangles = findAdjacentTriangles(nCombinations, validCombinations);
+
 % Create boundary polygon
-k = boundary(x,y,0); % not okay
+k = [1;2;3;4;1];
 
 % Calculate middle points on polygon
 midPoint = calculateMid(x,y,k);
@@ -53,11 +56,12 @@ closestPoint = findClosest(nMidpoints, nCombinations, validCenter, midPoint);
 %% Plot
 close all
 figure
-set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
+% set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
 plot(ptObject(:,1), ptObject(:,2),'r*');
 hold on
 triplot(validCombinations, ptObject(:,1), ptObject(:,2));
 plot(validCenter(:,1), validCenter(:,2), 'k*')
+plot(x(k),y(k),'r-')
 % plot(vx,vy,'m-')
 plot(ptStart(1),ptStart(2),'g*');
 xlim([-fieldSize(1)/2-50 fieldSize(1)/2+50]); ylim([-fieldSize(2)/2-50 fieldSize(2)/2+50]);
@@ -219,4 +223,33 @@ function [vx, vy] = addRemain(vx, vy, midPoint, closestPoint, nMidpoints, nCombi
         vy(1,i + nCombinations) = midPoint(i,2);
         vy(2,i + nCombinations) = closestPoint(i,2);
     end       
+end
+
+function adjacentTriangles = findAdjacentTriangles(nCombinations, validCombinations)
+newCombinations = ones(nCombinations, 4);
+for i = 1:nCombinations
+    newCombinations(i,:) = [validCombinations(i,1) validCombinations(i,2) validCombinations(i,3) validCombinations(i,1)];
+end
+
+adjacentTriangles = zeros(nCombinations,4);
+adjacentTriangles(:,1) = [1:nCombinations];
+for i = 1:nCombinations
+    p = 2;
+    for k = 1:3
+        comb = [newCombinations(i,k) newCombinations(i,k+1)];
+        for n = 1:nCombinations
+            for t = 1:3
+                if i ~= n
+                    if (newCombinations(n,t) == comb(1,1) && newCombinations(n,t+1) == comb(1,2)) || ...
+                        (newCombinations(n,t+1) == comb(1,1) && newCombinations(n,t) == comb(1,2))
+                        adjacentTriangles(i,p) = n;
+                        p = p + 1;
+                    end
+                end
+            end
+        end
+    end
+end
+           
+        
 end
