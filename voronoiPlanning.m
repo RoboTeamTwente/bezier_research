@@ -1,17 +1,18 @@
 clear all; close all; clc;
 
-% TODO LIST
-
-%
 fieldSize = [1200 900]; % size of the field: x y
 fieldCoordinates = [fieldSize(1) fieldSize(2); ...
     -fieldSize(1) fieldSize(2); -fieldSize(1) -fieldSize(2); ...
     fieldSize(1) -fieldSize(2)]/2;
-nObjects = 3; % used for testing stuff
+nObjects = 5; % used for testing stuff
 obj = [rand(nObjects,1)*(fieldSize(1)/2) rand(nObjects,1)*(fieldSize(2)/2)];
 ptObject = [fieldCoordinates; obj];
+m = randi([-1 1], nObjects,2); % generate random -1 1 matrix
+m(~m) = 1; % turn zeros into 1
+ptObject(5:end,:) = ptObject(5:end,:).*m; 
 % ptObject = [0 0; 100 100; 0 100; 100 0; 30 40; 50 80; 35 70];
-ptStart = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)];
+% ptStart = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)];
+ptStart = [-500 -400];
 startOrientationAngle=rand(1,1)*2*pi; % 0-2pi
 x = ptObject(:,1); y = ptObject(:,2);
 [nObjects,~]=size(ptObject); % this one should be used for real stuff
@@ -39,13 +40,12 @@ midPoint = calculateMid(x,y,k);
 [nMidpoints,~] = size(midPoint);
 
 % Make vx & vy
-% vx = ones(2, nCombinations - 1 + nMidpoints); vy = vx;
-[cx, cy] = centerLines(nCombinations, adjacentTriangles, validCenter);
+[vx, vy] = centerLines(nCombinations, adjacentTriangles, validCenter);
 
-% % Find closest center points to mid points
+% Find closest center points to mid points
 % closestPoint = findClosest(nMidpoints, nCombinations, validCenter, midPoint);
-% 
-% % Add midpoints and closest points to vx & vy
+ 
+% Add midpoints and closest points to vx & vy
 % [vx, vy] = addRemain(vx, vy, midPoint, closestPoint, nMidpoints, nCombinations);
 
 %% Plot
@@ -56,9 +56,8 @@ plot(ptObject(:,1), ptObject(:,2),'r*');
 hold on
 triplot(validCombinations, ptObject(:,1), ptObject(:,2));
 plot(validCenter(:,1), validCenter(:,2), 'k*')
-plot(x(k),y(k),'r-')
-plot(cx, cy, 'm-')
-% plot(vx,vy,'m-')
+% plot(x(k),y(k),'r-')
+plot(vx,vy,'m-')
 plot(ptStart(1),ptStart(2),'g*');
 xlim([-fieldSize(1)/2-50 fieldSize(1)/2+50]); ylim([-fieldSize(2)/2-50 fieldSize(2)/2+50]);
 grid on
