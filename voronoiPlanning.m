@@ -1,13 +1,8 @@
 clear all; close all; clc;
 
 % TODO LIST
-% Not use MATLAB function 'boundary'
-% Lines to infinity
-% x coordinate sorting is NOT the best option
-% Remove lines inside polygons created by cicumcenter polygons
-% Remove lines to boundary points if points are outside of boundary
 
-%% 
+%
 fieldSize = [1200 900]; % size of the field: x y
 fieldCoordinates = [fieldSize(1) fieldSize(2); ...
     -fieldSize(1) fieldSize(2); -fieldSize(1) -fieldSize(2); ...
@@ -44,14 +39,14 @@ midPoint = calculateMid(x,y,k);
 [nMidpoints,~] = size(midPoint);
 
 % Make vx & vy
-vx = ones(2, nCombinations - 1 + nMidpoints); vy = vx;
-[vx, vy] = centerLines(nCombinations, sortedCenter, vx, vy);
+% vx = ones(2, nCombinations - 1 + nMidpoints); vy = vx;
+[cx, cy] = centerLines(nCombinations, adjacentTriangles, validCenter);
 
-% Find closest center points to mid points
-closestPoint = findClosest(nMidpoints, nCombinations, validCenter, midPoint);
-
-% Add midpoints and closest points to vx & vy
-[vx, vy] = addRemain(vx, vy, midPoint, closestPoint, nMidpoints, nCombinations);
+% % Find closest center points to mid points
+% closestPoint = findClosest(nMidpoints, nCombinations, validCenter, midPoint);
+% 
+% % Add midpoints and closest points to vx & vy
+% [vx, vy] = addRemain(vx, vy, midPoint, closestPoint, nMidpoints, nCombinations);
 
 %% Plot
 close all
@@ -62,6 +57,7 @@ hold on
 triplot(validCombinations, ptObject(:,1), ptObject(:,2));
 plot(validCenter(:,1), validCenter(:,2), 'k*')
 plot(x(k),y(k),'r-')
+plot(cx, cy, 'm-')
 % plot(vx,vy,'m-')
 plot(ptStart(1),ptStart(2),'g*');
 xlim([-fieldSize(1)/2-50 fieldSize(1)/2+50]); ylim([-fieldSize(2)/2-50 fieldSize(2)/2+50]);
@@ -190,19 +186,19 @@ function midPoint = calculateMid(x,y,k)
     end
 end
 
-function [cx, cy] = centerLines(nCombinations, sortedCenter, cx, cy)
-    for i = 1:nCombinations
-            cx(1,i) = sortedCenter(i,1);
-            cy(1,i) = sortedCenter(i,2);
-        if i ~= 1 
-            cx(2,i-1) = sortedCenter(i,1);
-            cy(2,i-1) = sortedCenter(i,2);
-        end
-        if i == nCombinations
-            cx(2,i) = sortedCenter(1,1);
-            cy(2,i) = sortedCenter(1,2);
+function [cx, cy] = centerLines(nCombinations, adjacentTriangles, validCenter)
+cx = [];
+cy = [];
+p = 1;
+for i = 1:nCombinations
+    for k = 2:4
+        if adjacentTriangles(i,k) ~= 0
+            cx(1:2,p) = [validCenter(adjacentTriangles(i,1),1); validCenter(adjacentTriangles(i,k),1)];
+            cy(1:2,p) = [validCenter(adjacentTriangles(i,1),2); validCenter(adjacentTriangles(i,k),2)];
+            p = p + 1;
         end
     end
+end
 end
 
 function closestPoint = findClosest(nMidpoints, nCombinations, validCenter, midPoint)
@@ -249,7 +245,5 @@ for i = 1:nCombinations
             end
         end
     end
-end
-           
-        
+end      
 end
