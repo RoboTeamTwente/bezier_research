@@ -1,21 +1,22 @@
-function [curve,Q] = createBezierCurve(path,v0,obst)
+function [curve] = createBezierCurve(path,v0,obst)
 % Takes in a path with points and spits out a smooth curve passed these
 % points.
 % -> v0:    initial velocity struct (amp, theta)
 % -> obst:  list containing obstacles
 
-% TODO: What if the minimum curvature is still too high? 
+% TODO: What if the minimum curvature is still too high?
 
 if isempty(path) || length(path(:,1)) < 3
     disp('Please insert a path of at least 3 points.');
 end
 
-% Case I:   v0 is too low (~0)
+% Case I:   p0, p1 and p2 are on 1 line
 % Case II:  q1 is to the opposite side of p0p1 as p2
 % Case III: q1 is to the same side of p0p1 as p2. p0p1 can not intersect
 %   p1p2 without intersecting an obstacle (convex)
 % Case IV:  p0q1 intersects p1p2 without intersecting an obstacle
 
+% MULTIPLE OBJECTS
 Q = zeros(4,2); % control points
 pts = path(:,2:3); % path points [X, Y]
 
@@ -27,7 +28,7 @@ if abs(v0.theta-angleOf(pts(2,:)-pts(1,:))) < angDiff && abs(v0.theta-angleOf(pt
     % condition 1: p0+t*v0 must intersect with line segment p1p2
     % condition 2: p0+t*v0 cannot intersect with an obstacle
     
-    %% Case IV    
+    %% Case IV
     % max_q2 is computed such that p0p1max_q2 is the biggest triangle not
     %   intersecting an obstacle.
     p0ToObstacle = obstVec - pts(1,:);
@@ -177,6 +178,81 @@ curve = points2Curve(Q);
             ang = atan2(vec(2),vec(1));
         else
             disp('Vector must be 2D');
+        end
+    end
+
+    function [obstInPolygon] = findObstaclesInPolygon(pts,obst)
+        % Points need to be in order of which they are connected
+        obstInPolygon = struct('x',[],'y',[],'radius',[]);
+        if isempty(pts) || length(pts(:,1)) < 3
+            disp('Enter more than 2 points!');
+            return;
+        end
+        if isempty(obst.x)
+            disp('Enter obstacles!');
+            return;
+        end
+        nPoints = length(pts(:,1));
+        
+        for k = 1:length(obst.x)
+            isInside = false;
+            obstvec = [obst.x(k), obst.y(k)];
+            % Sum the angles between vectors from the obstacles to the points
+            % Condition: points need to be in order of connection
+            angSum = 0; % sum of all angles
+            for i = 1:nPoints
+                if i == nPoints
+                    obstToP1 = pts(i,:) - obstvec;
+                    obstToP2 = pts(1,:) - obstvec;
+                else
+                    obstToP1 = pts(i,:) - obstvec;
+                    obstToP2 = pts(i+1,:) - obstvec;
+                end
+                obstToP1 = obstToP1/norm(obstToP1); % normalize
+                obstToP2 = obstToP2/norm(obstToP2); % normalize
+                
+                angSum = angSum + acos(dot(obstToP1,obstToP2));
+            end
+            
+            if abs(angSum-2*pi) < 0.002*pi % allow a deviation of 0.1 percent
+                % the point is inside the polygon
+                isInside = true;
+            else
+                % compute distance to every vertex
+                for i = 1:nPoints
+                    if i == nPoints
+                        j = 1;
+                    else
+                        j = i+1;
+                    end
+                    p1p2 = pts(j,:)-pts(i,:);
+                    r = dot(p1p2,obstvec-pts(i,:))/norm(p1p2)^2;
+                    if r < 0
+                        % p1 is closest
+                        dist = norm(pts(i,:)-obstvec);
+                    elseif r > 1
+                        % p2 is closest
+                        dist = norm(pts(j,:)-obstvec);
+                    else
+                        %  compute distance to line
+                        % line: a + t*n (where a and n are vectors)
+                        % point: p (vector)
+                        p1 = pts(i,:);
+                        n = p1p2/norm(p1p2);
+                        p = obstvec;
+                        dist = norm((p1-p) - dot(p1-p, n)*n);
+                    end
+                    if dist < obst.radius
+                        isInside = true;
+                    end
+                end
+            end
+            
+            if isInside
+                obstInPolygon.x = [obstInPolygon.x; obst.x(k)];
+                obstInPolygon.y = [obstInPolygon.y; obst.y(k)];
+                obstInPolygon.radius = [obstInPolygon.radius; obst.radius(k)];
+            end
         end
     end
 end
