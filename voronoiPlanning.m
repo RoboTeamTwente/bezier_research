@@ -6,11 +6,12 @@ fieldCoordinates = [fieldSize(1) fieldSize(2); ...
     fieldSize(1) -fieldSize(2)]/2;
 nObjects = 3; % used for testing stuff
 obj = [rand(nObjects,1)*(fieldSize(1)/2) rand(nObjects,1)*(fieldSize(2)/2)];
+obj = [[-40, 20, 0, -10]; [-40, 20, -20, 0]]';
 ptObject = [fieldCoordinates; obj];
-m = randi([-1 1], nObjects,2); % generate random -1 1 matrix
-m(~m) = 1; % turn zeros into 1
-ptObject(5:end,:) = ptObject(5:end,:).*m; 
-% ptObject = [0 0; 100 100; 0 100; 100 0; 30 40; 50 80; 35 70];
+% m = randi([-1 1], nObjects,2); % generate random -1 1 matrix
+% m(~m) = 1; % turn zeros into 1
+% ptObject(5:end,:) = ptObject(5:end,:).*m; 
+% ptObject = [fieldCoordinates;  30 40; 50 80; 35 70];
 % ptStart = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)];
 ptStart = [-40 -30];
 startOrientationAngle=rand(1,1)*2*pi; % 0-2pi
@@ -71,7 +72,7 @@ plot(ptStart(1),ptStart(2),'g*');
 plot(ptObject(:,1), ptObject(:,2),'r*');
 plot(center(:,2), center(:,3), 'k*')
 quiver(ptStart(1),ptStart(2),dp(1),dp(2),0,'MaxHeadSize',0.5)
-xlim([-fieldSize(1)/2-5 fieldSize(1)/2+5]); ylim([-fieldSize(2)/2-5 fieldSize(2)/2+5]);
+%xlim([-fieldSize(1)/2-5 fieldSize(1)/2+5]); ylim([-fieldSize(2)/2-5 fieldSize(2)/2+5]);
 grid on
 
 %% Functions
