@@ -1,10 +1,10 @@
 clear all; close all; clc;
 
-fieldSize = [1200 900]; % size of the field: x y
+fieldSize = [120 90]; % size of the field: x y
 fieldCoordinates = [fieldSize(1) fieldSize(2); ...
     -fieldSize(1) fieldSize(2); -fieldSize(1) -fieldSize(2); ...
     fieldSize(1) -fieldSize(2)]/2;
-nObjects = 5; % used for testing stuff
+nObjects = 3; % used for testing stuff
 obj = [rand(nObjects,1)*(fieldSize(1)/2) rand(nObjects,1)*(fieldSize(2)/2)];
 ptObject = [fieldCoordinates; obj];
 m = randi([-1 1], nObjects,2); % generate random -1 1 matrix
@@ -12,10 +12,17 @@ m(~m) = 1; % turn zeros into 1
 ptObject(5:end,:) = ptObject(5:end,:).*m; 
 % ptObject = [0 0; 100 100; 0 100; 100 0; 30 40; 50 80; 35 70];
 % ptStart = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)];
-ptStart = [-500 -400];
+ptStart = [-40 -30];
 startOrientationAngle=rand(1,1)*2*pi; % 0-2pi
+orientationMargin = 10; % random number
 x = ptObject(:,1); y = ptObject(:,2);
 [nObjects,~]=size(ptObject); % this one should be used for real stuff
+
+% Orientation vector
+h = orientationMargin * sin(startOrientationAngle);
+l = orientationMargin * cos(startOrientationAngle);
+ptStartOrientation = [ptStart(1)+l, ptStart(2)+h];
+dp = ptStartOrientation - ptStart; 
 
 % All triangles
 triangleCombinations = possibleCombinations(1:nObjects,3); 
@@ -42,6 +49,10 @@ midPoint = calculateMid(x,y,k);
 % Make vx & vy
 [vx, vy] = centerLines(nCombinations, adjacentTriangles, validCenter);
 
+% Give end variables a normal name
+center = [(1:nCombinations)' validCenter];
+combs = validCombinations; 
+
 % Find closest center points to mid points
 % closestPoint = findClosest(nMidpoints, nCombinations, validCenter, midPoint);
  
@@ -52,14 +63,15 @@ midPoint = calculateMid(x,y,k);
 close all
 figure
 % set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
-plot(ptObject(:,1), ptObject(:,2),'r*');
+triplot(combs, ptObject(:,1), ptObject(:,2));
 hold on
-triplot(validCombinations, ptObject(:,1), ptObject(:,2));
-plot(validCenter(:,1), validCenter(:,2), 'k*')
 % plot(x(k),y(k),'r-')
 plot(vx,vy,'m-')
 plot(ptStart(1),ptStart(2),'g*');
-xlim([-fieldSize(1)/2-50 fieldSize(1)/2+50]); ylim([-fieldSize(2)/2-50 fieldSize(2)/2+50]);
+plot(ptObject(:,1), ptObject(:,2),'r*');
+plot(center(:,2), center(:,3), 'k*')
+quiver(ptStart(1),ptStart(2),dp(1),dp(2),0,'MaxHeadSize',0.5)
+xlim([-fieldSize(1)/2-5 fieldSize(1)/2+5]); ylim([-fieldSize(2)/2-5 fieldSize(2)/2+5]);
 grid on
 
 %% Functions
