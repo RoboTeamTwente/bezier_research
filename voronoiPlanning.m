@@ -53,6 +53,11 @@ midPoint = calculateMid(x,y,k);
 center = [(1:nCombinations)' validCenter];
 combs = validCombinations; 
 
+% Index vx & vy for Simen
+[~,nLines] = size(vx);
+vxIndex = [(1:nLines); vx];
+vyIndex = [(1:nLines); vy];
+
 % Find closest center points to mid points
 % closestPoint = findClosest(nMidpoints, nCombinations, validCenter, midPoint);
  
@@ -197,7 +202,7 @@ function midPoint = calculateMid(x,y,k)
     end
 end
 
-function [cx, cy] = centerLines(nCombinations, adjacentTriangles, validCenter)
+function [cx, cy, nLines] = centerLines(nCombinations, adjacentTriangles, validCenter)
 cx = [];
 cy = [];
 p = 1;
