@@ -1,4 +1,4 @@
-function [curve] = createBezierCurve(path,v0,obst)
+function [curve,Q] = createBezierCurve(path,v0,obst)
 % Takes in a path with points and spits out a smooth curve passed these
 % points.
 % -> v0:    initial velocity struct (amp, theta)
@@ -10,15 +10,16 @@ if isempty(path) || length(path(:,1)) < 3
     disp('Please insert a path of at least 3 points.');
 end
 
-% Case I:   p0, p1 and p2 are on 1 line
+Q = zeros(4,2); % control points
+pts = path(:,2:3); % path points [X, Y]
+obstInPolygon = findObstaclesInPolygon(pts,obst);
+
+%% Determine which case we have
+% Case I:   p0, p1 and p2 are on 1 line (not used, special case of II/III)
 % Case II:  q1 is to the opposite side of p0p1 as p2
 % Case III: q1 is to the same side of p0p1 as p2. p0p1 can not intersect
 %   p1p2 without intersecting an obstacle (convex)
 % Case IV:  p0q1 intersects p1p2 without intersecting an obstacle
-
-% MULTIPLE OBJECTS
-Q = zeros(4,2); % control points
-pts = path(:,2:3); % path points [X, Y]
 
 obstVec = [obst.x, obst.y];
 v0UVec = [cos(v0.theta), sin(v0.theta)];
@@ -28,102 +29,184 @@ if abs(v0.theta-angleOf(pts(2,:)-pts(1,:))) < angDiff && abs(v0.theta-angleOf(pt
     % condition 1: p0+t*v0 must intersect with line segment p1p2
     % condition 2: p0+t*v0 cannot intersect with an obstacle
     
-    %% Case IV
-    % max_q2 is computed such that p0p1max_q2 is the biggest triangle not
-    %   intersecting an obstacle.
-    p0ToObstacle = obstVec - pts(1,:);
-    rotDir = (atan2(pts(2,2),pts(2,1))-atan2(obst.y,obst.x)) / abs(atan2(pts(2,2),pts(2,1))-atan2(obst.y,obst.x)); % direction in which to rotate the vecToObst
-    rotAng = rotDir*asin(obst.radius/norm(p0ToObstacle)); % angle to rotate p0ToObstacle by
-    p0ToQ2 = p0ToObstacle * [cos(rotAng), sin(rotAng); -sin(rotAng), cos(rotAng)];
-    alpha = [p0ToQ2(2)/p0ToQ2(1), -1]; % vector to make life easier
-    s = (dot(pts(1,:),alpha) - dot(pts(2,:),alpha))/(dot(pts(3,:),alpha) - dot(pts(2,:),alpha));
-    if s > 1 || s < 0 || isnan(s)
-        s = 1;
-    end
-    max_q2 = pts(2,:) + s*(pts(3,:)-pts(2,:));
-    
-    s = (pts(2,2)-pts(1,2) - tan(v0.theta)*(pts(2,1)-pts(1,1))) / (tan(v0.theta)*(pts(3,1)-pts(2,1)) - (pts(3,2)-pts(2,2)));
-    
-    % only parameter to minimize curvature
-    b = 0.5;
-    
-    Q(2,:) = pts(2,:) + s*(pts(3,:)-pts(2,:));
-    Q(3,:) = Q(2,:) + b*(max_q2-Q(2,:));
-    Q(4,:) = []; % only 3 control points needed
+    % Case IV
+    currentCase = 4;
     disp('case IV')
 elseif onSameSide(pts,v0UVec)
-    %% Case III
-    % Determine maxes for parameters
-    % max_q1 lays on the edge of the voronoi diagram on the line p0 + t*v0
-    if round(v0.amp) == 0 % TODO: should be limited, not rounded
-        max_q1 = pts(1,:) + 3*v0UVec; % for orientation, constant could be used to control acceleration
-    else
-        max_q1 = pts(1,:) + 0.5*norm([obst.x, obst.y]-pts(1,:))^2/dot(v0UVec,[obst.x, obst.y]-pts(1,:)) * v0UVec; % assuming the voronoi edge is with the obstacle
-    end
-    % max_q2 is equal to max_q3
-    % max_q3 is computed such that max_q1p1max_q3 is the biggest triangle not
-    %   intersecting an obstacle.
-    max_q1ToObstacle = obstVec - max_q1;
-    rotDir = (atan2(pts(2,2),pts(2,1))-atan2(obst.y,obst.x)) / abs(atan2(pts(2,2),pts(2,1))-atan2(obst.y,obst.x)); % direction in which to rotate the vecToObst
-    rotAng = rotDir*asin(obst.radius/norm(max_q1ToObstacle)); % angle to rotate p0ToObstacle by
-    max_q1ToQ3 = max_q1ToObstacle * [cos(rotAng), sin(rotAng); -sin(rotAng), cos(rotAng)];
-    alpha = [max_q1ToQ3(2)/max_q1ToQ3(1), -1]; % vector to make life easier
-    s = (dot(max_q1,alpha) - dot(pts(2,:),alpha))/(dot(pts(3,:),alpha) - dot(pts(2,:),alpha));
-    if s > 1 || s < 0 || isnan(s)
-        s = 1;
-    end
-    max_q3 = pts(2,:) + s*(pts(3,:)-pts(2,:));
-    max_q2 = max_q3;
-    
-    % Determine parameters by minimizing curvature
-    a = 0.5; % q1-parameter; interval [0,1]
-    b = 0.2; % q2-parameter; interval [0,1]
-    c = 0.8; % q3-parameter; interval [0,1]
-    
-    % Determine control points
-    Q(1,:) = pts(1,:); % q0 = p0
-    Q(2,:) = pts(1,:) + a*(max_q1-pts(1,:)); % q1 = p0 + a*(max_q1-p0)
-    Q(3,:) = pts(2,:) + b*(max_q2-pts(2,:)); % q2 = p1 + b*(max_q2-p1)
-    Q(4,:) = pts(2,:) + c*(max_q3-pts(2,:)); % q3 = p1 + c*(max_q3-p1)
-    
+    % Case III
+    currentCase = 3;
     disp('case III')
 else
-    %% Case II
-    % Determine maxes for parameters
-    % max_q2 and max_q1 lay on the edges of the voronoi diagram
-    if round(v0.amp) == 0 % TODO: should be limited, not rounded
-        max_q1 = pts(1,:) + 3*v0UVec; % for orientation, constant could be used to control acceleration
-    else
-        max_q1 = pts(1,:) + v0.amp*v0UVec; % TODO: incorporate Voronoi
-    end
-    max_q2 = pts(2,:) - 2 * (pts(3,:)-pts(2,:))/norm(pts(3,:)-pts(2,:)); % TODO: incorporate Voronoi
-    
-    % max_q3 is computed such that p0p1max_q3 is the biggest triangle not
-    %   intersecting an obstacle.
-    p0ToObstacle = obstVec - pts(1,:);
-    rotDir = (atan2(pts(2,2),pts(2,1))-atan2(obst.y,obst.x)) / abs(atan2(pts(2,2),pts(2,1))-atan2(obst.y,obst.x)); % direction in which to rotate the vecToObst
-    rotAng = rotDir*asin(obst.radius/norm(p0ToObstacle)); % angle to rotate p0ToObstacle by
-    p0ToQ3 = p0ToObstacle * [cos(rotAng), sin(rotAng); -sin(rotAng), cos(rotAng)];
-    alpha = [p0ToQ3(2)/p0ToQ3(1), -1]; % vector to make life easier
-    s = (dot(pts(1,:),alpha) - dot(pts(2,:),alpha))/(dot(pts(3,:),alpha) - dot(pts(2,:),alpha));
-    if s > 1 || s < 0 || isnan(s)
-        s = 1;
-    end
-    max_q3 = pts(2,:) + s*(pts(3,:)-pts(2,:));
-    
-    % Determine parameters by minimizing curvature
-    a = 0.5; % q1-parameter; interval [0,1]
-    b = 0.5; % q2-parameter; interval [0,1]
-    c = 0.5; % q3-parameter; interval [0,1]
-    
-    % Determine control points
-    Q(1,:) = pts(1,:); % q0 = p0
-    Q(2,:) = pts(1,:) + a*(max_q1-pts(1,:)); % q1 = p0 + a*(max_q1-p0)
-    Q(3,:) = pts(2,:) + b*(max_q2-pts(2,:)); % q2 = p1 + b*(max_q2-p1)
-    Q(4,:) = pts(2,:) + c*(max_q3-pts(2,:)); % q3 = p1 + c*(max_q3-p1)
-    
+    % Case II
+    currentCase = 2;
     disp('case II')
 end
+
+%% Execute the current case
+if isempty(obstInPolygon.x)
+    % Simple case, no obstacles to take into account
+    switch currentCase
+        case 2
+            % Determine maxes for parameters
+            % max_q2 and max_q1 lay on the edges of the voronoi diagram
+            if round(v0.amp) == 0 % TODO: should be limited, not rounded
+                max_q1 = pts(1,:) + 3*v0UVec; % for orientation, constant could be used to control acceleration
+            else
+                max_q1 = pts(1,:) + v0.amp*v0UVec; % TODO: incorporate Voronoi
+            end
+            max_q2 = pts(2,:) - 2 * (pts(3,:)-pts(2,:))/norm(pts(3,:)-pts(2,:)); % TODO: incorporate Voronoi
+            
+            % max_q3 is computed such that p0p1max_q3 is the biggest triangle not
+            %   intersecting an obstacle. No obstacles, so max_q3 = p2.
+            max_q3 = pts(3,:);
+            
+            % Determine parameters by minimizing curvature
+            a = 0.5; % q1-parameter; interval [0,1]
+            b = 0.5; % q2-parameter; interval [0,1]
+            c = 0.5; % q3-parameter; interval [0,1]
+            
+            % Determine control points
+            Q(1,:) = pts(1,:); % q0 = p0
+            Q(2,:) = pts(1,:) + a*(max_q1-pts(1,:)); % q1 = p0 + a*(max_q1-p0)
+            Q(3,:) = pts(2,:) + b*(max_q2-pts(2,:)); % q2 = p1 + b*(max_q2-p1)
+            Q(4,:) = pts(2,:) + c*(max_q3-pts(2,:)); % q3 = p1 + c*(max_q3-p1)
+            
+        case 3
+            % Determine maxes for parameters
+            % max_q1 lays on the edge of the voronoi diagram on the line p0 + t*v0
+            if round(v0.amp) == 0 % TODO: should be limited, not rounded
+                max_q1 = pts(1,:) + 3*v0UVec; % for orientation, constant could be used to control acceleration
+            else
+                max_q1 = pts(1,:) + 1.5 * v0UVec; % TODO: incorporate Voronoi
+            end
+            % max_q2 is equal to max_q3
+            % max_q3 is computed such that max_q1p1max_q3 is the biggest triangle not
+            %   intersecting an obstacle. No obstacles, so max_q3 = p2.
+            max_q3 = pts(3,:);
+            max_q2 = max_q3;
+            
+            % Determine parameters by minimizing curvature
+            a = 0.5; % q1-parameter; interval [0,1]
+            b = 0.2; % q2-parameter; interval [0,1]
+            c = 0.8; % q3-parameter; interval [0,1]
+            
+            % Determine control points
+            Q(1,:) = pts(1,:); % q0 = p0
+            Q(2,:) = pts(1,:) + a*(max_q1-pts(1,:)); % q1 = p0 + a*(max_q1-p0)
+            Q(3,:) = pts(2,:) + b*(max_q2-pts(2,:)); % q2 = p1 + b*(max_q2-p1)
+            Q(4,:) = pts(2,:) + c*(max_q3-pts(2,:)); % q3 = p1 + c*(max_q3-p1)
+            
+        case 4
+            % max_q2 is computed such that p0p1max_q2 is the biggest triangle not
+            %   intersecting an obstacle. No obstacles, so max_q2 = p2.
+            max_q2 = pts(3,:);
+            
+            s = (pts(2,2)-pts(1,2) - tan(v0.theta)*(pts(2,1)-pts(1,1))) / (tan(v0.theta)*(pts(3,1)-pts(2,1)) - (pts(3,2)-pts(2,2)));
+            
+            % only parameter to minimize curvature
+            b = 0.5;
+            
+            Q(2,:) = pts(2,:) + s*(pts(3,:)-pts(2,:));
+            Q(3,:) = Q(2,:) + b*(max_q2-Q(2,:));
+            Q(4,:) = []; % only 3 control points needed
+    end
+else
+    % Difficult case, take into account the obstacles
+    switch currentCase
+        case 2
+            % Determine maxes for parameters
+            % max_q2 and max_q1 lay on the edges of the voronoi diagram
+            if round(v0.amp) == 0 % TODO: should be limited, not rounded
+                max_q1 = pts(1,:) + 3*v0UVec; % for orientation, constant could be used to control acceleration
+            else
+                max_q1 = pts(1,:) + v0.amp*v0UVec; % TODO: incorporate Voronoi
+            end
+            max_q2 = pts(2,:) - 2 * (pts(3,:)-pts(2,:))/norm(pts(3,:)-pts(2,:)); % TODO: incorporate Voronoi
+            
+            % max_q3 is computed such that p0p1max_q3 is the biggest triangle not
+            %   intersecting an obstacle.
+            p0ToObstacle = obstVec - pts(1,:);
+            rotDir = (atan2(pts(2,2),pts(2,1))-atan2(obst.y,obst.x)) / abs(atan2(pts(2,2),pts(2,1))-atan2(obst.y,obst.x)); % direction in which to rotate the vecToObst
+            rotAng = rotDir*asin(obst.radius/norm(p0ToObstacle)); % angle to rotate p0ToObstacle by
+            p0ToQ3 = p0ToObstacle * [cos(rotAng), sin(rotAng); -sin(rotAng), cos(rotAng)];
+            alpha = [p0ToQ3(2)/p0ToQ3(1), -1]; % vector to make life easier
+            s = (dot(pts(1,:),alpha) - dot(pts(2,:),alpha))/(dot(pts(3,:),alpha) - dot(pts(2,:),alpha));
+            if s > 1 || s < 0 || isnan(s)
+                s = 1;
+            end
+            max_q3 = pts(2,:) + s*(pts(3,:)-pts(2,:));
+            
+            % Determine parameters by minimizing curvature
+            a = 0.5; % q1-parameter; interval [0,1]
+            b = 0.5; % q2-parameter; interval [0,1]
+            c = 0.5; % q3-parameter; interval [0,1]
+            
+            % Determine control points
+            Q(1,:) = pts(1,:); % q0 = p0
+            Q(2,:) = pts(1,:) + a*(max_q1-pts(1,:)); % q1 = p0 + a*(max_q1-p0)
+            Q(3,:) = pts(2,:) + b*(max_q2-pts(2,:)); % q2 = p1 + b*(max_q2-p1)
+            Q(4,:) = pts(2,:) + c*(max_q3-pts(2,:)); % q3 = p1 + c*(max_q3-p1)
+            
+        case 3
+            % Determine maxes for parameters
+            % max_q1 lays on the edge of the voronoi diagram on the line p0 + t*v0
+            if round(v0.amp) == 0 % TODO: should be limited, not rounded
+                max_q1 = pts(1,:) + 3*v0UVec; % for orientation, constant could be used to control acceleration
+            else
+                max_q1 = pts(1,:) + 0.5*norm([obst.x, obst.y]-pts(1,:))^2/dot(v0UVec,[obst.x, obst.y]-pts(1,:)) * v0UVec; % assuming the voronoi edge is with the obstacle
+            end
+            % max_q2 is equal to max_q3
+            % max_q3 is computed such that max_q1p1max_q3 is the biggest triangle not
+            %   intersecting an obstacle.
+            max_q1ToObstacle = obstVec - max_q1;
+            rotDir = (atan2(pts(2,2),pts(2,1))-atan2(obst.y,obst.x)) / abs(atan2(pts(2,2),pts(2,1))-atan2(obst.y,obst.x)); % direction in which to rotate the vecToObst
+            rotAng = rotDir*asin(obst.radius/norm(max_q1ToObstacle)); % angle to rotate p0ToObstacle by
+            max_q1ToQ3 = max_q1ToObstacle * [cos(rotAng), sin(rotAng); -sin(rotAng), cos(rotAng)];
+            alpha = [max_q1ToQ3(2)/max_q1ToQ3(1), -1]; % vector to make life easier
+            s = (dot(max_q1,alpha) - dot(pts(2,:),alpha))/(dot(pts(3,:),alpha) - dot(pts(2,:),alpha));
+            if s > 1 || s < 0 || isnan(s)
+                s = 1;
+            end
+            max_q3 = pts(2,:) + s*(pts(3,:)-pts(2,:));
+            max_q2 = max_q3;
+            
+            % Determine parameters by minimizing curvature
+            a = 0.5; % q1-parameter; interval [0,1]
+            b = 0.2; % q2-parameter; interval [0,1]
+            c = 0.8; % q3-parameter; interval [0,1]
+            
+            % Determine control points
+            Q(1,:) = pts(1,:); % q0 = p0
+            Q(2,:) = pts(1,:) + a*(max_q1-pts(1,:)); % q1 = p0 + a*(max_q1-p0)
+            Q(3,:) = pts(2,:) + b*(max_q2-pts(2,:)); % q2 = p1 + b*(max_q2-p1)
+            Q(4,:) = pts(2,:) + c*(max_q3-pts(2,:)); % q3 = p1 + c*(max_q3-p1)
+            
+        case 4
+            % max_q2 is computed such that p0p1max_q2 is the biggest triangle not
+            %   intersecting an obstacle.
+            p0ToObstacle = obstVec - pts(1,:);
+            rotDir = (atan2(pts(2,2),pts(2,1))-atan2(obst.y,obst.x)) / abs(atan2(pts(2,2),pts(2,1))-atan2(obst.y,obst.x)); % direction in which to rotate the vecToObst
+            rotAng = rotDir*asin(obst.radius/norm(p0ToObstacle)); % angle to rotate p0ToObstacle by
+            p0ToQ2 = p0ToObstacle * [cos(rotAng), sin(rotAng); -sin(rotAng), cos(rotAng)];
+            alpha = [p0ToQ2(2)/p0ToQ2(1), -1]; % vector to make life easier
+            s = (dot(pts(1,:),alpha) - dot(pts(2,:),alpha))/(dot(pts(3,:),alpha) - dot(pts(2,:),alpha));
+            if s > 1 || s < 0 || isnan(s)
+                s = 1;
+            end
+            max_q2 = pts(2,:) + s*(pts(3,:)-pts(2,:));
+            
+            s = (pts(2,2)-pts(1,2) - tan(v0.theta)*(pts(2,1)-pts(1,1))) / (tan(v0.theta)*(pts(3,1)-pts(2,1)) - (pts(3,2)-pts(2,2)));
+            
+            % only parameter to minimize curvature
+            b = 0.5;
+            
+            Q(2,:) = pts(2,:) + s*(pts(3,:)-pts(2,:));
+            Q(3,:) = Q(2,:) + b*(max_q2-Q(2,:));
+            Q(4,:) = []; % only 3 control points needed
+    end
+end
+
+
 if round(v0.amp) == 0 % TODO: should be limited, not rounded
     Q = [Q(1,:); Q(1,:); Q(2:end,:)];
 end
