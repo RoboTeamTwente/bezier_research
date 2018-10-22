@@ -210,6 +210,21 @@ for i = 1:nCombinations
         end
     end
 end
+
+[~,nLines] = size(cx);
+for i = 1:nLines
+    for k = 1:nLines
+        if k ~= i 
+            if (cx(1,k) == cx(1,i)) && (cx(2,k) == cx(2,i)) || (cx(1,k) ...
+                    == cx(2,i) && cx(2,k) == cx(1,i))
+                cx(:,k) = [0 0];
+                cy(:,k) = [0 0];
+            end
+        end
+    end
+end
+cx(:,~any(cx,1)) = [];
+cy(:,~any(cy,1)) = [];
 end
 
 function closestPoint = findClosest(nMidpoints, nCombinations, validCenter, midPoint)
