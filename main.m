@@ -14,7 +14,7 @@ clear,clc;
 %    the second and third node)
 
 % start at the third node
-% set of control points now contains 2 points
+% (set of control points now contains 2 points)
 while % not at the end of the path
     if % convex including next node does not contain any obstacle
         % add node to set of control points
