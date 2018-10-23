@@ -203,7 +203,7 @@ end
     p = 1;
     for i = 1:nTriangles
         for k = 2:4
-            if adjacentTriangles(i,k) ~= 0
+            if adjacentTriangles(i,k) ~= 0 && adjacentTriangles(i,k) > adjacentTriangles(i,1)
                 adjacentCenter(p,:) = [adjacentTriangles(i,1), adjacentTriangles(i,k)];
                 p = p + 1;
             end
