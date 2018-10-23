@@ -30,8 +30,8 @@ triangleCombinations = possibleCombinations(1:nObjects,3);
 [validCenter, validCombinations] = makeDelaunay(ptObject, center, radius, nCombinations, nObjects, triangleCombinations);
 [nCombinations,~] = size(validCenter);
 
-% Find adjacent triangles
-adjacentTriangles = findAdjacentTriangles(nCombinations, validCombinations);
+% Find adjacent centers
+adjacentCenter = findAdjacentCenter(nCombinations, validCombinations);
 
 % Create boundary polygon
 k = [1;2;3;4;1];
@@ -42,7 +42,7 @@ k = [1;2;3;4;1];
 radiusx = [radiusxStart radiusxEnd];
 radiusy = [radiusyStart radiusyEnd];
 
-% Make vx & vy
+% Make vx & vy (voronoi lines)
 [vx, vy] = makeLines(nCombinations, adjacentTriangles, validCenter, radiusx, radiusy);
 
 % Give end variables a normal name
@@ -186,7 +186,7 @@ cx(:,~any(cx,1)) = [];
 cy(:,~any(cy,1)) = [];
 end
 
-function adjacentTriangles = findAdjacentTriangles(nCombinations, validCombinations)
+function adjacentTriangles = findAdjacentCenter(nCombinations, validCombinations)
 newCombinations = ones(nCombinations, 4);
 for i = 1:nCombinations
     newCombinations(i,:) = [validCombinations(i,1) validCombinations(i,2) validCombinations(i,3) validCombinations(i,1)];
@@ -210,7 +210,18 @@ for i = 1:nCombinations
             end
         end
     end
-end      
+end
+
+[nTriangles,~] = size(adjacentTriangles);
+p = 1;
+for i = 1:nTriangles
+    for k = 2:4
+        if k ~= 0
+            adjacentCenter(p,:) = [adjacentTriangles(i,1), adjacentTriangles(i,k)];
+            p = p + 1;
+        end
+    end
+end
 end
 
 function [x,y] = findPointInRadius(ptStart, ptEnd, nCombinations, center, scaleFactor)
