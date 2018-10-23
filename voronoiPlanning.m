@@ -29,30 +29,24 @@ triangleCombinations = possibleCombinations(1:nObjects,3);
 % Receive delaunay points + combinations
 [validCenter, validCombinations] = makeDelaunay(ptObject, center, radius, nCombinations, nObjects, triangleCombinations);
 [nCombinations,~] = size(validCenter);
+center = [(1:nCombinations)' validCenter];
 
-% Find adjacent centers
+% Find adjacent centers + triangles
 adjacentCenter = findAdjacentCenter(nCombinations, validCombinations);
 
-% Create boundary polygon
-k = [1;2;3;4;1];
-
 % Lines from start/end to center points
-[radiusxStart,radiusyStart] = findPointInRadius(ptStart, ptEnd, nCombinations, validCenter, scaleFactor);
-[radiusxEnd,radiusyEnd] = findPointInRadius(ptEnd, ptStart, nCombinations, validCenter, scaleFactor);
-radiusx = [radiusxStart radiusxEnd];
-radiusy = [radiusyStart radiusyEnd];
+[startComb, endComb] = findPointInRadius(ptStart, ptEnd, nCombinations, center, scaleFactor);
 
-% Make vx & vy (voronoi lines)
-[vx, vy] = makeLines(nCombinations, adjacentTriangles, validCenter, radiusx, radiusy);
-
-% Give end variables a normal name
-center = [(1:nCombinations)' validCenter];
-combs = validCombinations; 
-
-% Index vx & vy for Simen
-[~,nLines] = size(vx);
-vxIndex = [(1:nLines); vx];
-vyIndex = [(1:nLines); vy];
+allComb = [];
+if isempty(startComb) && isempty(endComb)
+    allComb = adjacentCenter;
+elseif isempty(startComb) && ~isempty(endComb)
+    allComb = [adjacentCenter; endComb];
+elseif ~isempty(startComb) && isempty(endComb)
+    allComb = [adjacentCenter; startComb];
+else
+    allComb = [adjacentCenter; startComb; endComb];
+end
 
 %% Functions
 function [center, radius] = createCircumcircles(combs, ptObject, nCombinations)
@@ -186,7 +180,7 @@ cx(:,~any(cx,1)) = [];
 cy(:,~any(cy,1)) = [];
 end
 
-function adjacentTriangles = findAdjacentCenter(nCombinations, validCombinations)
+function adjacentCenter = findAdjacentCenter(nCombinations, validCombinations)
 newCombinations = ones(nCombinations, 4);
 for i = 1:nCombinations
     newCombinations(i,:) = [validCombinations(i,1) validCombinations(i,2) validCombinations(i,3) validCombinations(i,1)];
@@ -224,25 +218,40 @@ for i = 1:nTriangles
 end
 end
 
-function [x,y] = findPointInRadius(ptStart, ptEnd, nCombinations, center, scaleFactor)
+function [startComb, endComb] = findPointInRadius(ptStart, ptEnd, nCombinations, center, scaleFactor)
 p = 1;
-centerInRadius = [];
+centerInRadiusStart = [];
+centerInRadiusEnd = []; 
+startComb = [];
+endComb = [];
 dist = sqrt((ptStart(1)-ptEnd(1))^2+(ptStart(2)-ptEnd(2))^2);
     for i = 1:nCombinations
         distToPoint(i) = sqrt((ptStart(1)-center(i,1))^2+(ptStart(2)-center(i,2))^2);
         if distToPoint(i) < scaleFactor*dist
-            centerInRadius(p,:) = [center(i,1) center(i,2)];
+            centerInRadiusStart(p) = center(i,1);
             p = p + 1;
         end
     end
-    
-    [n,~] = size(centerInRadius);
-    if isempty(centerInRadius)
-        x = [ptStart(1); ptStart(1)]; y = [ptStart(2); ptStart(2)];
-    else
+p = 1;
+    for i = 1:nCombinations
+        distToPoint(i) = sqrt((ptEnd(1)-center(i,1))^2+(ptEnd(2)-center(i,2))^2);
+        if distToPoint(i) < scaleFactor*dist
+            centerInRadiusEnd(p) = center(i,1);
+            p = p + 1;
+        end
+    end
+
+    [~,n] = size(centerInRadiusStart);
+    if ~isempty(centerInRadiusStart)
         for i = 1:n
-           x(:,i) = [ptStart(1) centerInRadius(i,1)];
-           y(:,i) = [ptStart(2) centerInRadius(i,2)];
+           startComb(i,:) = [6493 centerInRadiusStart(i)];
+        end
+    end
+    
+    [~,n] = size(centerInRadiusEnd);
+    if ~isempty(centerInRadiusEnd)
+        for i = 1:n
+            endComb(i,:) = [6494 centerInRadiusEnd(i)];
         end
     end
 end
