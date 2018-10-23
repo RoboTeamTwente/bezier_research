@@ -22,7 +22,7 @@ ptObject(5:end,:) = ptObject(5:end,:).*m; % multiply so it's not only positive
 ptStart = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)]*m(1);
 ptEnd = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)]*m(1);
 
-% Set 
+% Set
 [nObjects,~]=size(ptObject); % this one should be used for real stuff
 
 %% Get Voronoi diagram
@@ -31,11 +31,17 @@ ptEnd = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)]*m(1);
 %  - Change name function from voronoiPlanning to makeVoronoi
 [allComb, center] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd);
 
+plotter(allComb,center)
+
 %%
 % Get shortest path
 %  - Matrix (numberPathNodes-by-3) path = [ID, x, y]
 %   (this includes the start and end nodes)
-%[path] = findShortestPath(nodes, segments, nodes(1,1), nodes(end,1));
+if isempty(find(allComb(:,2)==6493,1)) || isempty(find(allComb(:,2)==6494,1))
+    disp('No connections to start and/or end point...');
+else
+    [path] = findShortestPath(center, allComb, center(end-1,1), center(end,1));
+end
 
 % Take the first 3 nodes from path and create first path of Bezier Curve
 %   (the end node of this first path will be somewhere on the edge between
@@ -51,9 +57,9 @@ ptEnd = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)]*m(1);
 %         % choose point on edge from last node to next node such that the
 %         %   convex does not contain any obstacle
 %         % add this point to the set of control points
-%         
+%
 %         % make bezier curve and add it to the total curve
-%         
+%
 %         % empty set of control points
 %         % add last point of previous curve and next node
 %     end
