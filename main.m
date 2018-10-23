@@ -1,5 +1,5 @@
 clear,clc;
-%% MAIN CODE (pseudo style)
+% MAIN CODE (pseudo style)
 
 % Get information from world_state
 % This is not possible now so everything is defined/generated
@@ -7,6 +7,9 @@ clear,clc;
 %  - Current robot position and velocity
 %  - Field size [x, y]
 fieldSize = [120, 90];
+fieldCoordinates = [fieldSize(1) fieldSize(2); ...
+    -fieldSize(1) fieldSize(2); -fieldSize(1) -fieldSize(2); ...
+    fieldSize(1) -fieldSize(2)]/2;
 v0 = struct('amp',10,'theta',0.5*pi);
 
 % Generate objects and start/end point (is received from world in real code)
@@ -20,27 +23,24 @@ ptStart = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)]*m(1);
 ptEnd = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)]*m(1);
 
 % Set 
-fieldCoordinates = [fieldSize(1) fieldSize(2); ...
-    -fieldSize(1) fieldSize(2); -fieldSize(1) -fieldSize(2); ...
-    fieldSize(1) -fieldSize(2)]/2;
-scaleFactor = 1; % random value, to determine the partition of the radius
 [nObjects,~]=size(ptObject); % this one should be used for real stuff
 
-% Get Voronoi diagram
-%  - Matrix with adjacent points in the diagram
+%% Get Voronoi diagram
+%  - Matrix with connected points in the Voronoi diagram
+%  - 6493 = start, 6494 = end
 %  - Change name function from voronoiPlanning to makeVoronoi
-allComb = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, scaleFactor);
+[allComb, center] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd);
 
 %%
 % Get shortest path
 %  - Matrix (numberPathNodes-by-3) path = [ID, x, y]
 %   (this includes the start and end nodes)
-[path] = findShortestPath(nodes, segments, nodes(1,1), nodes(end,1));
+%[path] = findShortestPath(nodes, segments, nodes(1,1), nodes(end,1));
 
 % Take the first 3 nodes from path and create first path of Bezier Curve
 %   (the end node of this first path will be somewhere on the edge between
 %    the second and third node)
-[curve] = createBezierCurve(path,v0,obst);
+%[curve] = createBezierCurve(path,v0,obst);
 
 % start at the third node
 % (set of control points now contains 2 points)
