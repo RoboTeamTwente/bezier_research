@@ -15,16 +15,9 @@ ptStart = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)]*m(1);
 ptEnd = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)]*m(1);
 % ptStart = [-40 -30];
 startOrientationAngle=rand(1,1)*2*pi; % 0-2pi
-orientationMargin = 10; % random value, for plotting of the orientation vector
 scaleFactor = 1; % random value, to determine the partition of the radius
 x = ptObject(:,1); y = ptObject(:,2);
 [nObjects,~]=size(ptObject); % this one should be used for real stuff
-
-% Orientation vector
-h = orientationMargin * sin(startOrientationAngle);
-l = orientationMargin * cos(startOrientationAngle);
-ptStartOrientation = [ptStart(1)+l, ptStart(2)+h];
-dp = ptStartOrientation - ptStart; 
 
 % All triangles
 triangleCombinations = possibleCombinations(1:nObjects,3); 
@@ -60,21 +53,6 @@ combs = validCombinations;
 [~,nLines] = size(vx);
 vxIndex = [(1:nLines); vx];
 vyIndex = [(1:nLines); vy];
-
-%% Plot
-close all
-figure
-set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
-triplot(combs, ptObject(:,1), ptObject(:,2),'k-');
-hold on
-plot(vx,vy,'b-')
-plot(ptStart(1),ptStart(2),'g*');
-plot(ptEnd(1),ptEnd(2),'g*');
-plot(ptObject(:,1), ptObject(:,2),'r*');
-plot(center(:,2), center(:,3), 'k*')
-quiver(ptStart(1),ptStart(2),dp(1),dp(2),0,'MaxHeadSize',0.5)
-xlim([-fieldSize(1)/2-5 fieldSize(1)/2+5]); ylim([-fieldSize(2)/2-5 fieldSize(2)/2+5]);
-grid on
 
 %% Functions
 function [center, radius] = createCircumcircles(combs, ptObject, nCombinations)
