@@ -1,23 +1,23 @@
-clear all; close all; clc;
+function allComb = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, scaleFactor)
 
-fieldSize = [120 90]; % size of the field: x y
-fieldCoordinates = [fieldSize(1) fieldSize(2); ...
-    -fieldSize(1) fieldSize(2); -fieldSize(1) -fieldSize(2); ...
-    fieldSize(1) -fieldSize(2)]/2;
-nObjects = 15; % used for testing stuff
-obj = [rand(nObjects,1)*(fieldSize(1)/2) rand(nObjects,1)*(fieldSize(2)/2)];
-ptObject = [fieldCoordinates; obj];
-m = randi([-1 1], nObjects,2); % generate random -1 1 matrix
-m(~m) = 1; % turn zeros into 1
-ptObject(5:end,:) = ptObject(5:end,:).*m; % multiply so it's not only positive
-% ptObject = [0 0; 100 100; 0 100; 100 0; 30 40; 50 80; 35 70];
-ptStart = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)]*m(1);
-ptEnd = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)]*m(1);
-% ptStart = [-40 -30];
-startOrientationAngle=rand(1,1)*2*pi; % 0-2pi
-scaleFactor = 1; % random value, to determine the partition of the radius
-x = ptObject(:,1); y = ptObject(:,2);
-[nObjects,~]=size(ptObject); % this one should be used for real stuff
+% fieldSize = [120 90]; % size of the field: x y
+% fieldCoordinates = [fieldSize(1) fieldSize(2); ...
+%     -fieldSize(1) fieldSize(2); -fieldSize(1) -fieldSize(2); ...
+%     fieldSize(1) -fieldSize(2)]/2;
+% nObjects = 15; % used for testing stuff
+% obj = [rand(nObjects,1)*(fieldSize(1)/2) rand(nObjects,1)*(fieldSize(2)/2)];
+% ptObject = [fieldCoordinates; obj];
+% m = randi([-1 1], nObjects,2); % generate random -1 1 matrix
+% m(~m) = 1; % turn zeros into 1
+% ptObject(5:end,:) = ptObject(5:end,:).*m; % multiply so it's not only positive
+% % ptObject = [0 0; 100 100; 0 100; 100 0; 30 40; 50 80; 35 70];
+% ptStart = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)]*m(1);
+% ptEnd = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)]*m(1);
+% % ptStart = [-40 -30];
+% startOrientationAngle=rand(1,1)*2*pi; % 0-2pi
+% scaleFactor = 1; % random value, to determine the partition of the radius
+% % x = ptObject(:,1); y = ptObject(:,2);
+% [nObjects,~]=size(ptObject); % this one should be used for real stuff
 
 % All triangles
 triangleCombinations = possibleCombinations(1:nObjects,3); 
@@ -29,30 +29,23 @@ triangleCombinations = possibleCombinations(1:nObjects,3);
 % Receive delaunay points + combinations
 [validCenter, validCombinations] = makeDelaunay(ptObject, center, radius, nCombinations, nObjects, triangleCombinations);
 [nCombinations,~] = size(validCenter);
+center = [(1:nCombinations)' validCenter];
 
-% Find adjacent centers
+% Find adjacent centers + triangles
 adjacentCenter = findAdjacentCenter(nCombinations, validCombinations);
 
-% Create boundary polygon
-k = [1;2;3;4;1];
-
 % Lines from start/end to center points
-[radiusxStart,radiusyStart] = findPointInRadius(ptStart, ptEnd, nCombinations, validCenter, scaleFactor);
-[radiusxEnd,radiusyEnd] = findPointInRadius(ptEnd, ptStart, nCombinations, validCenter, scaleFactor);
-radiusx = [radiusxStart radiusxEnd];
-radiusy = [radiusyStart radiusyEnd];
+[startComb, endComb] = findPointInRadius(ptStart, ptEnd, nCombinations, center, scaleFactor);
 
-% Make vx & vy (voronoi lines)
-[vx, vy] = makeLines(nCombinations, adjacentTriangles, validCenter, radiusx, radiusy);
-
-% Give end variables a normal name
-center = [(1:nCombinations)' validCenter];
-combs = validCombinations; 
-
-% Index vx & vy for Simen
-[~,nLines] = size(vx);
-vxIndex = [(1:nLines); vx];
-vyIndex = [(1:nLines); vy];
+if isempty(startComb) && isempty(endComb)
+    allComb = adjacentCenter;
+elseif isempty(startComb) && ~isempty(endComb)
+    allComb = [adjacentCenter; endComb];
+elseif ~isempty(startComb) && isempty(endComb)
+    allComb = [adjacentCenter; startComb];
+else
+    allComb = [adjacentCenter; startComb; endComb];
+end
 
 %% Functions
 function [center, radius] = createCircumcircles(combs, ptObject, nCombinations)
@@ -186,7 +179,7 @@ cx(:,~any(cx,1)) = [];
 cy(:,~any(cy,1)) = [];
 end
 
-function adjacentTriangles = findAdjacentCenter(nCombinations, validCombinations)
+function adjacentCenter = findAdjacentCenter(nCombinations, validCombinations)
 newCombinations = ones(nCombinations, 4);
 for i = 1:nCombinations
     newCombinations(i,:) = [validCombinations(i,1) validCombinations(i,2) validCombinations(i,3) validCombinations(i,1)];
@@ -224,25 +217,42 @@ for i = 1:nTriangles
 end
 end
 
-function [x,y] = findPointInRadius(ptStart, ptEnd, nCombinations, center, scaleFactor)
+function [startComb, endComb] = findPointInRadius(ptStart, ptEnd, nCombinations, center, scaleFactor)
 p = 1;
-centerInRadius = [];
+centerInRadiusStart = [];
+centerInRadiusEnd = []; 
+startComb = [];
+endComb = [];
 dist = sqrt((ptStart(1)-ptEnd(1))^2+(ptStart(2)-ptEnd(2))^2);
     for i = 1:nCombinations
         distToPoint(i) = sqrt((ptStart(1)-center(i,1))^2+(ptStart(2)-center(i,2))^2);
         if distToPoint(i) < scaleFactor*dist
-            centerInRadius(p,:) = [center(i,1) center(i,2)];
+            centerInRadiusStart(p) = center(i,1);
             p = p + 1;
         end
     end
-    
-    [n,~] = size(centerInRadius);
-    if isempty(centerInRadius)
-        x = [ptStart(1); ptStart(1)]; y = [ptStart(2); ptStart(2)];
-    else
-        for i = 1:n
-           x(:,i) = [ptStart(1) centerInRadius(i,1)];
-           y(:,i) = [ptStart(2) centerInRadius(i,2)];
+p = 1;
+    for i = 1:nCombinations
+        distToPoint(i) = sqrt((ptEnd(1)-center(i,1))^2+(ptEnd(2)-center(i,2))^2);
+        if distToPoint(i) < scaleFactor*dist
+            centerInRadiusEnd(p) = center(i,1);
+            p = p + 1;
         end
     end
+
+    [~,n] = size(centerInRadiusStart);
+    if ~isempty(centerInRadiusStart)
+        for i = 1:n
+           startComb(i,:) = [6493 centerInRadiusStart(i)];
+        end
+    end
+    
+    [~,n] = size(centerInRadiusEnd);
+    if ~isempty(centerInRadiusEnd)
+        for i = 1:n
+            endComb(i,:) = [6494 centerInRadiusEnd(i)];
+        end
+    end
+end
+
 end
