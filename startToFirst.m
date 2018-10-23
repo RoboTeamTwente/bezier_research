@@ -15,7 +15,8 @@ ptStart = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)]*m(1);
 ptEnd = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)]*m(1);
 % ptStart = [-40 -30];
 startOrientationAngle=rand(1,1)*2*pi; % 0-2pi
-orientationMargin = 10; % random number
+orientationMargin = 10; % random value, for plotting of the orientation vector
+scaleFactor = 1; % random value, to determine the partition of the radius
 x = ptObject(:,1); y = ptObject(:,2);
 [nObjects,~]=size(ptObject); % this one should be used for real stuff
 
@@ -63,7 +64,6 @@ closestPointy = [ptStart(2); center(index,3)];
 [quadVectorx,quadVectory] = findQuadrantAnglePoints(startOrientationAngle, nCombinations, ptStart, center);
 
 % Points within radius between start and end
-scaleFactor = 0.9; % random value
 [radiusx,radiusy] = findPointInRadius(ptStart, ptEnd, nCombinations, center, scaleFactor);
 
 % Plot
@@ -72,56 +72,55 @@ figure
 set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
 
 subplot(2,2,1)
-triplot(combs, ptObject(:,1), ptObject(:,2));
+triplot(combs, ptObject(:,1), ptObject(:,2),'k-')
 hold on
-plot(vx,vy,'k-')
-plot(closestPointx, closestPointy,'m-');
-plot(ptStart(1),ptStart(2),'g*');
-plot(ptEnd(1),ptEnd(2),'g*');
-plot(ptObject(:,1), ptObject(:,2),'r*');
-plot(center(:,2), center(:,3), 'k*')
+plot(vx,vy,'b-')
+plot(closestPointx, closestPointy,'m-')
+plot(ptStart(1),ptStart(2),'g*')
+plot(ptEnd(1),ptEnd(2),'g*')
+plot(ptObject(:,1), ptObject(:,2),'k*')
+plot(center(:,2), center(:,3), 'r*')
 quiver(ptStart(1),ptStart(2),dp(1),dp(2),0,'MaxHeadSize',0.5)
 xlim([-fieldSize(1)/2-5 fieldSize(1)/2+5]); ylim([-fieldSize(2)/2-5 fieldSize(2)/2+5]);
 title('Closest point')
 grid on
 
 subplot(2,2,2)
-triplot(combs, ptObject(:,1), ptObject(:,2));
+triplot(combs, ptObject(:,1), ptObject(:,2),'k-')
 hold on
-plot(vx,vy,'k-')
-plot(quadEndx, quadEndy,'m-');
-plot(ptStart(1),ptStart(2),'g*');
-plot(ptEnd(1),ptEnd(2),'g*');
-plot(ptObject(:,1), ptObject(:,2),'r*');
-plot(center(:,2), center(:,3), 'k*')
+plot(vx,vy,'b-')
+plot(quadEndx, quadEndy,'m-')
+plot(ptStart(1),ptStart(2),'g*')
+plot(ptEnd(1),ptEnd(2),'g*')
+plot(ptObject(:,1), ptObject(:,2),'k*')
+plot(center(:,2), center(:,3), 'r*')
 quiver(ptStart(1),ptStart(2),dp(1),dp(2),0,'MaxHeadSize',0.5)
 xlim([-fieldSize(1)/2-5 fieldSize(1)/2+5]); ylim([-fieldSize(2)/2-5 fieldSize(2)/2+5]);
 title('Points in quadrant end point')
 grid on
 
 subplot(2,2,3)
-triplot(combs, ptObject(:,1), ptObject(:,2));
+triplot(combs, ptObject(:,1), ptObject(:,2),'k-')
 hold on
-plot(vx,vy,'k-')
-plot(quadVectorx, quadVectory,'m-');
-plot(ptStart(1),ptStart(2),'g*');
-plot(ptEnd(1),ptEnd(2),'g*');
-plot(ptObject(:,1), ptObject(:,2),'r*');
-plot(center(:,2), center(:,3), 'k*')
+plot(vx,vy,'b-')
+plot(quadVectorx, quadVectory,'m-')
+plot(ptStart(1),ptStart(2),'g*')
+plot(ptEnd(1),ptEnd(2),'g*')
+plot(ptObject(:,1), ptObject(:,2),'k*')
+plot(center(:,2), center(:,3), 'r*')
 quiver(ptStart(1),ptStart(2),dp(1),dp(2),0,'MaxHeadSize',0.5)
 xlim([-fieldSize(1)/2-5 fieldSize(1)/2+5]); ylim([-fieldSize(2)/2-5 fieldSize(2)/2+5]);
 title('Points in quadrant vector')
 grid on
 
 subplot(2,2,4)
-triplot(combs, ptObject(:,1), ptObject(:,2));
+triplot(combs, ptObject(:,1), ptObject(:,2),'k-');
 hold on
-plot(vx,vy,'k-')
-plot(radiusx, radiusy,'m-');
+plot(vx,vy,'b-')
 plot(ptStart(1),ptStart(2),'g*');
 plot(ptEnd(1),ptEnd(2),'g*');
-plot(ptObject(:,1), ptObject(:,2),'r*');
-plot(center(:,2), center(:,3), 'k*')
+plot(ptObject(:,1), ptObject(:,2),'k*');
+plot(center(:,2), center(:,3), 'r*')
 quiver(ptStart(1),ptStart(2),dp(1),dp(2),0,'MaxHeadSize',0.5)
 xlim([-fieldSize(1)/2-5 fieldSize(1)/2+5]); ylim([-fieldSize(2)/2-5 fieldSize(2)/2+5]);
 title('Points within radius')
@@ -289,6 +288,7 @@ end
 
 function [x,y] = findQuadrantPoints(ptStart, ptEnd, nCombinations, center)
 p = 1;
+quadCenter = [];
     if (ptStart(1) < ptEnd(1)) && (ptStart(2) < ptEnd(2))
         % quad = 1;
         for i = 1:nCombinations
@@ -324,14 +324,19 @@ p = 1;
     end
 
     [n,~] = size(quadCenter);
-    for i = 1:n
-        x(:,i) = [ptStart(1) quadCenter(i,1)];
-        y(:,i) = [ptStart(2) quadCenter(i,2)];
+    if isempty(quadCenter)
+        x = ptStart(1); y = ptStart(2);
+    else
+        for i = 1:n
+            x(:,i) = [ptStart(1) quadCenter(i,1)];
+            y(:,i) = [ptStart(2) quadCenter(i,2)];
+        end
     end
 end
 
 function [x,y] = findQuadrantAnglePoints(startOrientationAngle, nCombinations, ptStart, center)
 p = 1;
+quadCenter = [];
     if startOrientationAngle >= 0 && startOrientationAngle <= 0.5*pi
         % quad = 1;
         for i = 1:nCombinations
@@ -367,9 +372,13 @@ p = 1;
     end
 
     [n,~] = size(quadCenter);
-    for i = 1:n
-       x(:,i) = [ptStart(1) quadCenter(i,1)];
-       y(:,i) = [ptStart(2) quadCenter(i,2)];
+    if isempty(quadCenter)
+        x = ptStart(1); y = ptStart(2);
+    else
+        for i = 1:n
+           x(:,i) = [ptStart(1) quadCenter(i,1)];
+           y(:,i) = [ptStart(2) quadCenter(i,2)];
+        end
     end
 end
 
@@ -384,10 +393,14 @@ dist = sqrt((ptStart(1)-ptEnd(1))^2+(ptStart(2)-ptEnd(2))^2);
             p = p + 1;
         end
     end
-
+    
     [n,~] = size(centerInRadius);
-    for i = 1:n
-       x(:,i) = [ptStart(1) centerInRadius(i,1)];
-       y(:,i) = [ptStart(2) centerInRadius(i,2)];
+    if isempty(centerInRadius)
+        x = ptStart(1); y = ptStart(2);
+    else
+        for i = 1:n
+           x(:,i) = [ptStart(1) centerInRadius(i,1)];
+           y(:,i) = [ptStart(2) centerInRadius(i,2)];
+        end
     end
 end
