@@ -20,7 +20,7 @@ scaleFactor = 1; % random value, to determine the partition of the radius
 x = ptObject(:,1); y = ptObject(:,2);
 [nObjects,~]=size(ptObject); % this one should be used for real stuff
 
-% Orientation vector
+% Orientation vector (for plotting)
 h = orientationMargin * sin(startOrientationAngle);
 l = orientationMargin * cos(startOrientationAngle);
 ptStartOrientation = [ptStart(1)+l, ptStart(2)+h];
@@ -35,6 +35,7 @@ triangleCombinations = possibleCombinations(1:nObjects,3);
 
 % Receive delaunay points + combinations
 [validCenter, validCombinations] = makeDelaunay(ptObject, center, radius, nCombinations, nObjects, triangleCombinations);
+% sortedCenter = sortCenter(validCenter);
 [nCombinations,~] = size(validCenter);
 
 % Find adjacent triangles
@@ -43,37 +44,87 @@ adjacentTriangles = findAdjacentTriangles(nCombinations, validCombinations);
 % Create boundary polygon
 k = [1;2;3;4;1];
 
-% Lines from start/end to center points
-[radiusxStart,radiusyStart] = findPointInRadius(ptStart, ptEnd, nCombinations, validCenter, scaleFactor);
-[radiusxEnd,radiusyEnd] = findPointInRadius(ptEnd, ptStart, nCombinations, validCenter, scaleFactor);
-radiusx = [radiusxStart radiusxEnd];
-radiusy = [radiusyStart radiusyEnd];
-
 % Make vx & vy
-[vx, vy] = makeLines(nCombinations, adjacentTriangles, validCenter, radiusx, radiusy);
+[vx, vy] = centerLines(nCombinations, adjacentTriangles, validCenter);
 
 % Give end variables a normal name
 center = [(1:nCombinations)' validCenter];
 combs = validCombinations; 
 
-% Index vx & vy for Simen
-[~,nLines] = size(vx);
-vxIndex = [(1:nLines); vx];
-vyIndex = [(1:nLines); vy];
+% First line stuff
+% Closest point
+[index] = findClosestPoint(ptStart,center,nCombinations);
+closestPointx = [ptStart(1); center(index,2)];
+closestPointy = [ptStart(2); center(index,3)];
 
-%% Plot
-close all
+% All points in quadrant of end point
+[quadEndx,quadEndy] = findQuadrantPoints(ptStart, ptEnd, nCombinations, center);
+
+% All points in quadrant of vector
+[quadVectorx,quadVectory] = findQuadrantAnglePoints(startOrientationAngle, nCombinations, ptStart, center);
+
+% Points within radius between start and end
+[radiusx,radiusy] = findPointInRadius(ptStart, ptEnd, nCombinations, center, scaleFactor);
+
+% Plot
+close all;
 figure
 set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
+
+subplot(2,2,1)
+triplot(combs, ptObject(:,1), ptObject(:,2),'k-')
+hold on
+plot(vx,vy,'b-')
+plot(closestPointx, closestPointy,'m-')
+plot(ptStart(1),ptStart(2),'g*')
+plot(ptEnd(1),ptEnd(2),'g*')
+plot(ptObject(:,1), ptObject(:,2),'k*')
+plot(center(:,2), center(:,3), 'r*')
+quiver(ptStart(1),ptStart(2),dp(1),dp(2),0,'MaxHeadSize',0.5)
+xlim([-fieldSize(1)/2-5 fieldSize(1)/2+5]); ylim([-fieldSize(2)/2-5 fieldSize(2)/2+5]);
+title('Closest point')
+grid on
+
+subplot(2,2,2)
+triplot(combs, ptObject(:,1), ptObject(:,2),'k-')
+hold on
+plot(vx,vy,'b-')
+plot(quadEndx, quadEndy,'m-')
+plot(ptStart(1),ptStart(2),'g*')
+plot(ptEnd(1),ptEnd(2),'g*')
+plot(ptObject(:,1), ptObject(:,2),'k*')
+plot(center(:,2), center(:,3), 'r*')
+quiver(ptStart(1),ptStart(2),dp(1),dp(2),0,'MaxHeadSize',0.5)
+xlim([-fieldSize(1)/2-5 fieldSize(1)/2+5]); ylim([-fieldSize(2)/2-5 fieldSize(2)/2+5]);
+title('Points in quadrant end point')
+grid on
+
+subplot(2,2,3)
+triplot(combs, ptObject(:,1), ptObject(:,2),'k-')
+hold on
+plot(vx,vy,'b-')
+plot(quadVectorx, quadVectory,'m-')
+plot(ptStart(1),ptStart(2),'g*')
+plot(ptEnd(1),ptEnd(2),'g*')
+plot(ptObject(:,1), ptObject(:,2),'k*')
+plot(center(:,2), center(:,3), 'r*')
+quiver(ptStart(1),ptStart(2),dp(1),dp(2),0,'MaxHeadSize',0.5)
+xlim([-fieldSize(1)/2-5 fieldSize(1)/2+5]); ylim([-fieldSize(2)/2-5 fieldSize(2)/2+5]);
+title('Points in quadrant vector')
+grid on
+
+subplot(2,2,4)
 triplot(combs, ptObject(:,1), ptObject(:,2),'k-');
 hold on
 plot(vx,vy,'b-')
+plot(radiusx,radiusy,'m-')
 plot(ptStart(1),ptStart(2),'g*');
 plot(ptEnd(1),ptEnd(2),'g*');
-plot(ptObject(:,1), ptObject(:,2),'r*');
-plot(center(:,2), center(:,3), 'k*')
+plot(ptObject(:,1), ptObject(:,2),'k*');
+plot(center(:,2), center(:,3), 'r*')
 quiver(ptStart(1),ptStart(2),dp(1),dp(2),0,'MaxHeadSize',0.5)
 xlim([-fieldSize(1)/2-5 fieldSize(1)/2+5]); ylim([-fieldSize(2)/2-5 fieldSize(2)/2+5]);
+title('Points within radius')
 grid on
 
 %% Functions
@@ -172,7 +223,7 @@ temp = temp(any(temp,2),:); % remove zero rows
 combs = combs(any(combs,2),:);
 end
 
-function [cx, cy, nLines] = makeLines(nCombinations, adjacentTriangles, validCenter, radiusx, radiusy)
+function [cx, cy, nLines] = centerLines(nCombinations, adjacentTriangles, validCenter)
 cx = [];
 cy = [];
 p = 1;
@@ -184,12 +235,6 @@ for i = 1:nCombinations
             p = p + 1;
         end
     end
-end
-[~,n] = size(radiusx);
-for i = 1:n
-    cx(1:2,p) = radiusx(1:2,i);
-    cy(1:2,p) = radiusy(1:2,i);
-    p = p + 1;
 end
 
 [~,nLines] = size(cx);
@@ -235,21 +280,124 @@ for i = 1:nCombinations
 end      
 end
 
+function [index] = findClosestPoint(pt,options,nCombinations)
+    for i = 1:nCombinations
+        dist(i) = sqrt((pt(1)-options(i,2))^2+(pt(2)-options(i,3))^2);
+    end
+[~,index] = min(dist);
+end
+
+function [x,y] = findQuadrantPoints(ptStart, ptEnd, nCombinations, center)
+p = 1;
+quadCenter = [];
+    if (ptStart(1) < ptEnd(1)) && (ptStart(2) < ptEnd(2))
+        % quad = 1;
+        for i = 1:nCombinations
+            if (ptStart(1) < center(i,2)) && (ptStart(2) < center(i,3))
+                quadCenter(p,:) = [center(i,2) center(i,3)];
+                p = p + 1;
+            end
+        end
+    elseif (ptStart(1) < ptEnd(1)) && (ptStart(2) > ptEnd(2))
+        % quad = 2;
+        for i = 1:nCombinations
+            if (ptStart(1) < center(i,2)) && (ptStart(2) > center(i,3))
+                quadCenter(p,:) = [center(i,2) center(i,3)];
+                p = p + 1;
+            end
+        end
+    elseif (ptStart(1) > ptEnd(1)) && (ptStart(2) > ptEnd(2))
+        % quad = 3;
+        for i = 1:nCombinations
+            if (ptStart(1) > center(i,2)) && (ptStart(2) > center(i,3))
+                quadCenter(p,:) = [center(i,2) center(i,3)];
+                p = p + 1;
+            end
+        end
+    else
+        % quad = 4;
+        for i = 1:nCombinations
+            if (ptStart(1) > center(i,2)) && (ptStart(2) < center(i,3))
+                quadCenter(p,:) = [center(i,2) center(i,3)];
+                p = p + 1;
+            end
+        end
+    end
+
+    [n,~] = size(quadCenter);
+    if isempty(quadCenter)
+        x = ptStart(1); y = ptStart(2);
+    else
+        for i = 1:n
+            x(:,i) = [ptStart(1) quadCenter(i,1)];
+            y(:,i) = [ptStart(2) quadCenter(i,2)];
+        end
+    end
+end
+
+function [x,y] = findQuadrantAnglePoints(startOrientationAngle, nCombinations, ptStart, center)
+p = 1;
+quadCenter = [];
+    if startOrientationAngle >= 0 && startOrientationAngle <= 0.5*pi
+        % quad = 1;
+        for i = 1:nCombinations
+            if (ptStart(1) < center(i,2)) && (ptStart(2) < center(i,3))
+                quadCenter(p,:) = [center(i,2) center(i,3)];
+                p = p + 1;
+            end
+        end
+    elseif startOrientationAngle > 1.5*pi && startOrientationAngle <= 2*pi
+        % quad = 2;
+        for i = 1:nCombinations
+            if (ptStart(1) < center(i,2)) && (ptStart(2) > center(i,3))
+                quadCenter(p,:) = [center(i,2) center(i,3)];
+                p = p + 1;
+            end
+        end
+    elseif startOrientationAngle >= pi && startOrientationAngle <= 1.5*pi
+        % quad = 3;
+        for i = 1:nCombinations
+            if (ptStart(1) > center(i,2)) && (ptStart(2) > center(i,3))
+                quadCenter(p,:) = [center(i,2) center(i,3)];
+                p = p + 1;
+            end
+        end
+    else
+        % quad = 4;
+        for i = 1:nCombinations
+            if (ptStart(1) > center(i,2)) && (ptStart(2) < center(i,3))
+                quadCenter(p,:) = [center(i,2) center(i,3)];
+                p = p + 1;
+            end
+        end
+    end
+
+    [n,~] = size(quadCenter);
+    if isempty(quadCenter)
+        x = ptStart(1); y = ptStart(2);
+    else
+        for i = 1:n
+           x(:,i) = [ptStart(1) quadCenter(i,1)];
+           y(:,i) = [ptStart(2) quadCenter(i,2)];
+        end
+    end
+end
+
 function [x,y] = findPointInRadius(ptStart, ptEnd, nCombinations, center, scaleFactor)
 p = 1;
 centerInRadius = [];
 dist = sqrt((ptStart(1)-ptEnd(1))^2+(ptStart(2)-ptEnd(2))^2);
     for i = 1:nCombinations
-        distToPoint(i) = sqrt((ptStart(1)-center(i,1))^2+(ptStart(2)-center(i,2))^2);
+        distToPoint(i) = sqrt((ptStart(1)-center(i,2))^2+(ptStart(2)-center(i,3))^2);
         if distToPoint(i) < scaleFactor*dist
-            centerInRadius(p,:) = [center(i,1) center(i,2)];
+            centerInRadius(p,:) = [center(i,2) center(i,3)];
             p = p + 1;
         end
     end
     
     [n,~] = size(centerInRadius);
     if isempty(centerInRadius)
-        x = [ptStart(1); ptStart(1)]; y = [ptStart(2); ptStart(2)];
+        x = ptStart(1); y = ptStart(2);
     else
         for i = 1:n
            x(:,i) = [ptStart(1) centerInRadius(i,1)];
