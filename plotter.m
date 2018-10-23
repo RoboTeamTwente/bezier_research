@@ -11,9 +11,10 @@ end
 for i = 2:length(path(:,1))
     line([path(i,2), path(i-1,2)],[path(i,3), path(i-1,3)],'color','m','linestyle','-','linewidth',2)
 end
-plot(ptObject(:,1),ptObject(:,2),'or','MarkerSize',20);
+plot(ptObject(:,1),ptObject(:,2),'xr','MarkerSize',20); plot(ptObject(:,1),ptObject(:,2),'or','MarkerSize',20);
 plot(center(:,2),center(:,3),'.b','MarkerSize',15);
 plot(center(end-1,2),center(end-1,3),'.g','MarkerSize',25);
 plot(center(end,2),center(end,3),'.r','MarkerSize',25);
+axis equal
 grid on
 end
