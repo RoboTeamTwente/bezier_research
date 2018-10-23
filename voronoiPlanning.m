@@ -219,7 +219,7 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
     endComb = [];
     dist = sqrt((ptStart(1)-ptEnd(1))^2+(ptStart(2)-ptEnd(2))^2);
         for i = 1:nCombinations
-            distToPoint(i) = sqrt((ptStart(1)-center(i,1))^2+(ptStart(2)-center(i,2))^2);
+            distToPoint(i) = sqrt((ptStart(1)-center(i,2))^2+(ptStart(2)-center(i,3))^2);
             if distToPoint(i) < dist
                 centerInRadiusStart(p) = center(i,1);
                 p = p + 1;
@@ -227,7 +227,7 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
         end
     p = 1;
         for i = 1:nCombinations
-            distToPoint(i) = sqrt((ptEnd(1)-center(i,1))^2+(ptEnd(2)-center(i,2))^2);
+            distToPoint(i) = sqrt((ptEnd(1)-center(i,2))^2+(ptEnd(2)-center(i,3))^2);
             if distToPoint(i) < dist
                 centerInRadiusEnd(p) = center(i,1);
                 p = p + 1;
