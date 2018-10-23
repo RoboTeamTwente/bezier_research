@@ -11,7 +11,7 @@ ptStart = [-40, -20];
 v0 = struct('amp',10,'theta',0.5*pi);
 
 % Get goal orientation, position and velocity
-ptEnd = [40, 30];
+ptEnd = [40, 20];
 
 % Get Voronoi diagram
 %  - Matrix (numberNodes-by-3) nodes = [ID, x, y]
@@ -26,6 +26,7 @@ ptEnd = [40, 30];
 % Take the first 3 nodes from path and create first path of Bezier Curve
 %   (the end node of this first path will be somewhere on the edge between
 %    the second and third node)
+[curve] = createBezierCurve(path,v0,obst);
 
 % start at the third node
 % (set of control points now contains 2 points)
