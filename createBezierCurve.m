@@ -26,7 +26,7 @@ dangerObst = findMostDangerousObstacle(obstInPolygon,pts);
 obstVec = [dangerObst.x, dangerObst.y];
 v0UVec = [cos(v0.theta), sin(v0.theta)];
 angDiff = abs(angleOf(pts(2,:)-pts(1,:)) - angleOf(pts(3,:)-pts(1,:))); % angle between p0p1 and p0p2
-if abs(v0.theta-angleOf(pts(2,:)-pts(1,:))) < angDiff && abs(v0.theta-angleOf(pts(3,:)-pts(1,:))) < angDiff && ~v0IntersectsObstacle(pts,obst,v0UVec)
+if abs(v0.theta-angleOf(pts(2,:)-pts(1,:))) < angDiff && abs(v0.theta-angleOf(pts(3,:)-pts(1,:))) < angDiff && ~v0IntersectsObstacle(pts,obstInPolygon,v0UVec)
     % condition 1: p0+t*v0 must intersect with line segment p1p2
     % condition 2: p0+t*v0 cannot intersect with an obstacle
     
@@ -108,7 +108,7 @@ if isempty(obstInPolygon.x)
             s = (pts(2,2)-pts(1,2) - tan(v0.theta)*(pts(2,1)-pts(1,1))) / (tan(v0.theta)*(pts(3,1)-pts(2,1)) - (pts(3,2)-pts(2,2)));
             
             % only parameter to minimize curvature
-            b = 0.5;
+            b = 1;
             
             Q(2,:) = pts(2,:) + s*(pts(3,:)-pts(2,:));
             Q(3,:) = Q(2,:) + b*(max_q2-Q(2,:));
@@ -215,6 +215,10 @@ if round(v0.amp) == 0 % TODO: should be limited, not rounded
     Q = [Q(1,:); Q(1,:); Q(2:end,:)];
 end
 curve = points2Curve(Q);
+
+%% Extend curve with straight line to P2.
+straight = points2Curve([Q(end,:); pts(3,:)]);
+curve = [curve, straight];
 
 
 %% FUNCTIONS
@@ -348,7 +352,10 @@ curve = points2Curve(Q);
         for i = 1:length(obst.x)
             obstvec = [obst.x(i), obst.y(i)];
             distObstToV0 = norm((pts(1,:)-obstvec) - dot(pts(1,:)-obstvec,v0UVec)*v0UVec);
-            if distObstToV0 < obst.radius(i)
+            p0p1 = pts(2,:)-pts(1,:);
+            angP0P1ToObst = acos(dot(obstvec/norm(obstvec), p0p1/norm(p0p1)));
+            angP0P1ToV0 = acos(dot(v0UVec, p0p1/norm(p0p1)));
+            if distObstToV0 < obst.radius(i) || angP0P1ToObst < angP0P1ToV0
                 bool = true;
                 return;
             end
