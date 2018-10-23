@@ -21,6 +21,7 @@ triangleCombinations = possibleCombinations(1:nObjects,3);
 [validCenter, validCombinations] = makeDelaunay(ptObject, center, radius, nCombinations, nObjects, triangleCombinations);
 [nCombinations,~] = size(validCenter);
 center = [(1:nCombinations)' validCenter];
+center = [center; [6493, ptStart]; [6494, ptEnd]];
 
 % Find adjacent centers + triangles
 adjacentCenter = findAdjacentCenter(nCombinations, validCombinations);
