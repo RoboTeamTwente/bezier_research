@@ -4,18 +4,19 @@ fieldSize = [120 90]; % size of the field: x y
 fieldCoordinates = [fieldSize(1) fieldSize(2); ...
     -fieldSize(1) fieldSize(2); -fieldSize(1) -fieldSize(2); ...
     fieldSize(1) -fieldSize(2)]/2;
-nObjects = 3; % used for testing stuff
+nObjects = 15; % used for testing stuff
 obj = [rand(nObjects,1)*(fieldSize(1)/2) rand(nObjects,1)*(fieldSize(2)/2)];
 ptObject = [fieldCoordinates; obj];
 m = randi([-1 1], nObjects,2); % generate random -1 1 matrix
 m(~m) = 1; % turn zeros into 1
-ptObject(5:end,:) = ptObject(5:end,:).*m; 
+ptObject(5:end,:) = ptObject(5:end,:).*m; % multiply so it's not only positive
 % ptObject = [0 0; 100 100; 0 100; 100 0; 30 40; 50 80; 35 70];
 ptStart = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)]*m(1);
 ptEnd = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)]*m(1);
 % ptStart = [-40 -30];
 startOrientationAngle=rand(1,1)*2*pi; % 0-2pi
-orientationMargin = 10; % random number
+orientationMargin = 10; % random value, for plotting of the orientation vector
+scaleFactor = 1; % random value, to determine the partition of the radius
 x = ptObject(:,1); y = ptObject(:,2);
 [nObjects,~]=size(ptObject); % this one should be used for real stuff
 
@@ -34,7 +35,6 @@ triangleCombinations = possibleCombinations(1:nObjects,3);
 
 % Receive delaunay points + combinations
 [validCenter, validCombinations] = makeDelaunay(ptObject, center, radius, nCombinations, nObjects, triangleCombinations);
-% sortedCenter = sortCenter(validCenter);
 [nCombinations,~] = size(validCenter);
 
 % Find adjacent triangles
@@ -43,12 +43,14 @@ adjacentTriangles = findAdjacentTriangles(nCombinations, validCombinations);
 % Create boundary polygon
 k = [1;2;3;4;1];
 
-% Calculate middle points on polygon
-% midPoint = calculateMid(x,y,k);
-% [nMidpoints,~] = size(midPoint);
+% Lines from start/end to center points
+[radiusxStart,radiusyStart] = findPointInRadius(ptStart, ptEnd, nCombinations, validCenter, scaleFactor);
+[radiusxEnd,radiusyEnd] = findPointInRadius(ptEnd, ptStart, nCombinations, validCenter, scaleFactor);
+radiusx = [radiusxStart radiusxEnd];
+radiusy = [radiusyStart radiusyEnd];
 
 % Make vx & vy
-[vx, vy] = centerLines(nCombinations, adjacentTriangles, validCenter);
+[vx, vy] = makeLines(nCombinations, adjacentTriangles, validCenter, radiusx, radiusy);
 
 % Give end variables a normal name
 center = [(1:nCombinations)' validCenter];
@@ -59,20 +61,13 @@ combs = validCombinations;
 vxIndex = [(1:nLines); vx];
 vyIndex = [(1:nLines); vy];
 
-% Find closest center points to mid points
-% closestPoint = findClosest(nMidpoints, nCombinations, validCenter, midPoint);
- 
-% Add midpoints and closest points to vx & vy
-% [vx, vy] = addRemain(vx, vy, midPoint, closestPoint, nMidpoints, nCombinations);
-
 %% Plot
 close all
 figure
 set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
-triplot(combs, ptObject(:,1), ptObject(:,2));
+triplot(combs, ptObject(:,1), ptObject(:,2),'k-');
 hold on
-% plot(x(k),y(k),'r-')
-plot(vx,vy,'m-')
+plot(vx,vy,'b-')
 plot(ptStart(1),ptStart(2),'g*');
 plot(ptEnd(1),ptEnd(2),'g*');
 plot(ptObject(:,1), ptObject(:,2),'r*');
@@ -177,34 +172,7 @@ temp = temp(any(temp,2),:); % remove zero rows
 combs = combs(any(combs,2),:);
 end
 
-% function sorted = sortCenter(validCenter)
-% [n, ~] = size(validCenter);
-%     for i = 1:n
-%         [~, index] = max(validCenter(:,1));
-%         if i == 1
-%             sorted(n,:) = validCenter(index,:);
-%         else
-%             sorted(n+1-i,:) = validCenter(index,:);
-%         end
-%         validCenter(index,:) = [0 0];
-%     end
-%     
-%     for i = 1:n-1
-%         if sorted(i,1) == sorted(i+1,1)
-%             if sorted(i,2) > sorted(i+1,2)
-%                 sorted([n+i n+i+1]) = sorted([n+i+1 n+i]);
-%             end
-%         end
-%     end
-% end
-
-% function midPoint = calculateMid(x,y,k)
-%     for i = 1:length(k)-1
-%         midPoint(i,:) =  [(x(k(i))+x(k(i+1)))/2 (y(k(i))+y(k(i+1)))/2];
-%     end
-% end
-
-function [cx, cy, nLines] = centerLines(nCombinations, adjacentTriangles, validCenter)
+function [cx, cy, nLines] = makeLines(nCombinations, adjacentTriangles, validCenter, radiusx, radiusy)
 cx = [];
 cy = [];
 p = 1;
@@ -216,6 +184,12 @@ for i = 1:nCombinations
             p = p + 1;
         end
     end
+end
+[~,n] = size(radiusx);
+for i = 1:n
+    cx(1:2,p) = radiusx(1:2,i);
+    cy(1:2,p) = radiusy(1:2,i);
+    p = p + 1;
 end
 
 [~,nLines] = size(cx);
@@ -233,26 +207,6 @@ end
 cx(:,~any(cx,1)) = [];
 cy(:,~any(cy,1)) = [];
 end
-
-% function closestPoint = findClosest(nMidpoints, nCombinations, validCenter, midPoint)
-% closestPoint = [];
-%     for i = 1:nMidpoints
-%         for k = 1:nCombinations
-%             distance(k) = sqrt((validCenter(k,1) - midPoint(i,1))^2 + (validCenter(k,2) - midPoint(i,2))^2);
-%         end
-%         [~,index] = min(distance);
-%         closestPoint(i,:) = [validCenter(index,1) validCenter(index,2)]; 
-%     end
-% end
-
-% function [vx, vy] = addRemain(vx, vy, midPoint, closestPoint, nMidpoints, nCombinations)
-%     for i = 1:nMidpoints
-%         vx(1,i + nCombinations) = midPoint(i,1);
-%         vx(2,i + nCombinations) = closestPoint(i,1);
-%         vy(1,i + nCombinations) = midPoint(i,2);
-%         vy(2,i + nCombinations) = closestPoint(i,2);
-%     end       
-% end
 
 function adjacentTriangles = findAdjacentTriangles(nCombinations, validCombinations)
 newCombinations = ones(nCombinations, 4);
@@ -279,4 +233,27 @@ for i = 1:nCombinations
         end
     end
 end      
+end
+
+function [x,y] = findPointInRadius(ptStart, ptEnd, nCombinations, center, scaleFactor)
+p = 1;
+centerInRadius = [];
+dist = sqrt((ptStart(1)-ptEnd(1))^2+(ptStart(2)-ptEnd(2))^2);
+    for i = 1:nCombinations
+        distToPoint(i) = sqrt((ptStart(1)-center(i,1))^2+(ptStart(2)-center(i,2))^2);
+        if distToPoint(i) < scaleFactor*dist
+            centerInRadius(p,:) = [center(i,1) center(i,2)];
+            p = p + 1;
+        end
+    end
+    
+    [n,~] = size(centerInRadius);
+    if isempty(centerInRadius)
+        x = [ptStart(1); ptStart(1)]; y = [ptStart(2); ptStart(2)];
+    else
+        for i = 1:n
+           x(:,i) = [ptStart(1) centerInRadius(i,1)];
+           y(:,i) = [ptStart(2) centerInRadius(i,2)];
+        end
+    end
 end
