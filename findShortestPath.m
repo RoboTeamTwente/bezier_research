@@ -59,6 +59,12 @@ while queue(1) ~= endID % while the end node is not on top of the queue
             end
         end
     end
+    
+    if isempty(queue)
+        disp('Queue is empty! Something must be wrong...');
+        path = [];
+        return;
+    end
 end
 
 %% Backtrack path to make list of nodes
