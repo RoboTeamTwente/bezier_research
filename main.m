@@ -31,8 +31,6 @@ ptEnd = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)]*m(1);
 %  - Change name function from voronoiPlanning to makeVoronoi
 [allComb, center] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd);
 
-plotter(allComb,center)
-
 %%
 % Get shortest path
 %  - Matrix (numberPathNodes-by-3) path = [ID, x, y]
@@ -42,6 +40,10 @@ if isempty(find(allComb(:,2)==6493,1)) || isempty(find(allComb(:,2)==6494,1))
 else
     [path] = findShortestPath(center, allComb, center(end-1,1), center(end,1));
 end
+
+figure
+plotter(allComb,center,path,ptObject)
+axis([-fieldSize(1) fieldSize(1), -fieldSize(2) fieldSize(2)]/2)
 
 % Take the first 3 nodes from path and create first path of Bezier Curve
 %   (the end node of this first path will be somewhere on the edge between
