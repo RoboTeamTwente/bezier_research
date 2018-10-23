@@ -1,23 +1,23 @@
-clear all; close all; clc;
+function allComb = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, scaleFactor)
 
-fieldSize = [120 90]; % size of the field: x y
-fieldCoordinates = [fieldSize(1) fieldSize(2); ...
-    -fieldSize(1) fieldSize(2); -fieldSize(1) -fieldSize(2); ...
-    fieldSize(1) -fieldSize(2)]/2;
-nObjects = 15; % used for testing stuff
-obj = [rand(nObjects,1)*(fieldSize(1)/2) rand(nObjects,1)*(fieldSize(2)/2)];
-ptObject = [fieldCoordinates; obj];
-m = randi([-1 1], nObjects,2); % generate random -1 1 matrix
-m(~m) = 1; % turn zeros into 1
-ptObject(5:end,:) = ptObject(5:end,:).*m; % multiply so it's not only positive
-% ptObject = [0 0; 100 100; 0 100; 100 0; 30 40; 50 80; 35 70];
-ptStart = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)]*m(1);
-ptEnd = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)]*m(1);
-% ptStart = [-40 -30];
-startOrientationAngle=rand(1,1)*2*pi; % 0-2pi
-scaleFactor = 1; % random value, to determine the partition of the radius
-x = ptObject(:,1); y = ptObject(:,2);
-[nObjects,~]=size(ptObject); % this one should be used for real stuff
+% fieldSize = [120 90]; % size of the field: x y
+% fieldCoordinates = [fieldSize(1) fieldSize(2); ...
+%     -fieldSize(1) fieldSize(2); -fieldSize(1) -fieldSize(2); ...
+%     fieldSize(1) -fieldSize(2)]/2;
+% nObjects = 15; % used for testing stuff
+% obj = [rand(nObjects,1)*(fieldSize(1)/2) rand(nObjects,1)*(fieldSize(2)/2)];
+% ptObject = [fieldCoordinates; obj];
+% m = randi([-1 1], nObjects,2); % generate random -1 1 matrix
+% m(~m) = 1; % turn zeros into 1
+% ptObject(5:end,:) = ptObject(5:end,:).*m; % multiply so it's not only positive
+% % ptObject = [0 0; 100 100; 0 100; 100 0; 30 40; 50 80; 35 70];
+% ptStart = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)]*m(1);
+% ptEnd = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)]*m(1);
+% % ptStart = [-40 -30];
+% startOrientationAngle=rand(1,1)*2*pi; % 0-2pi
+% scaleFactor = 1; % random value, to determine the partition of the radius
+% % x = ptObject(:,1); y = ptObject(:,2);
+% [nObjects,~]=size(ptObject); % this one should be used for real stuff
 
 % All triangles
 triangleCombinations = possibleCombinations(1:nObjects,3); 
@@ -253,4 +253,6 @@ p = 1;
             endComb(i,:) = [6494 centerInRadiusEnd(i)];
         end
     end
+end
+
 end
