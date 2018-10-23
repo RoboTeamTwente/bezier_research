@@ -4,7 +4,7 @@ fieldSize = [120 90]; % size of the field: x y
 fieldCoordinates = [fieldSize(1) fieldSize(2); ...
     -fieldSize(1) fieldSize(2); -fieldSize(1) -fieldSize(2); ...
     fieldSize(1) -fieldSize(2)]/2;
-nObjects = 3; % used for testing stuff
+nObjects = 15; % used for testing stuff
 obj = [rand(nObjects,1)*(fieldSize(1)/2) rand(nObjects,1)*(fieldSize(2)/2)];
 ptObject = [fieldCoordinates; obj];
 m = randi([-1 1], nObjects,2); % generate random -1 1 matrix
@@ -117,6 +117,7 @@ subplot(2,2,4)
 triplot(combs, ptObject(:,1), ptObject(:,2),'k-');
 hold on
 plot(vx,vy,'b-')
+plot(radiusx,radiusy,'m-')
 plot(ptStart(1),ptStart(2),'g*');
 plot(ptEnd(1),ptEnd(2),'g*');
 plot(ptObject(:,1), ptObject(:,2),'k*');
