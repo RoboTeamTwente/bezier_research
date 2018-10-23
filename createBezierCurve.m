@@ -13,6 +13,8 @@ end
 Q = zeros(4,2); % control points
 pts = path(:,2:3); % path points [X, Y]
 obstInPolygon = findObstaclesInPolygon(pts,obst);
+dangerObst = findMostDangerousObstacle(obstInPolygon,pts);
+
 
 %% Determine which case we have
 % Case I:   p0, p1 and p2 are on 1 line (not used, special case of II/III)
@@ -21,11 +23,10 @@ obstInPolygon = findObstaclesInPolygon(pts,obst);
 %   p1p2 without intersecting an obstacle (convex)
 % Case IV:  p0q1 intersects p1p2 without intersecting an obstacle
 
-obstVec = [obst.x, obst.y];
+obstVec = [dangerObst.x, dangerObst.y];
 v0UVec = [cos(v0.theta), sin(v0.theta)];
-distObstToV0 = norm((pts(1,:)-obstVec) - dot(pts(1,:)-obstVec,v0UVec)*v0UVec);
 angDiff = abs(angleOf(pts(2,:)-pts(1,:)) - angleOf(pts(3,:)-pts(1,:))); % angle between p0p1 and p0p2
-if abs(v0.theta-angleOf(pts(2,:)-pts(1,:))) < angDiff && abs(v0.theta-angleOf(pts(3,:)-pts(1,:))) < angDiff && distObstToV0 > obst.radius
+if abs(v0.theta-angleOf(pts(2,:)-pts(1,:))) < angDiff && abs(v0.theta-angleOf(pts(3,:)-pts(1,:))) < angDiff && ~v0IntersectsObstacle(pts,obst,v0UVec)
     % condition 1: p0+t*v0 must intersect with line segment p1p2
     % condition 2: p0+t*v0 cannot intersect with an obstacle
     
@@ -43,6 +44,9 @@ else
 end
 
 %% Execute the current case
+% This part of the code is split up in 2 different parts:
+%       1 that takes into account obstacles and 1 that doesn't.
+%       this is to reduce calculations
 if isempty(obstInPolygon.x)
     % Simple case, no obstacles to take into account
     switch currentCase
@@ -126,8 +130,8 @@ else
             % max_q3 is computed such that p0p1max_q3 is the biggest triangle not
             %   intersecting an obstacle.
             p0ToObstacle = obstVec - pts(1,:);
-            rotDir = (atan2(pts(2,2),pts(2,1))-atan2(obst.y,obst.x)) / abs(atan2(pts(2,2),pts(2,1))-atan2(obst.y,obst.x)); % direction in which to rotate the vecToObst
-            rotAng = rotDir*asin(obst.radius/norm(p0ToObstacle)); % angle to rotate p0ToObstacle by
+            rotDir = (atan2(pts(2,2),pts(2,1))-atan2(dangerObst.y,dangerObst.x)) / abs(atan2(pts(2,2),pts(2,1))-atan2(dangerObst.y,dangerObst.x)); % direction in which to rotate the vecToObst
+            rotAng = rotDir*asin(dangerObst.radius/norm(p0ToObstacle)); % angle to rotate p0ToObstacle by
             p0ToQ3 = p0ToObstacle * [cos(rotAng), sin(rotAng); -sin(rotAng), cos(rotAng)];
             alpha = [p0ToQ3(2)/p0ToQ3(1), -1]; % vector to make life easier
             s = (dot(pts(1,:),alpha) - dot(pts(2,:),alpha))/(dot(pts(3,:),alpha) - dot(pts(2,:),alpha));
@@ -153,14 +157,14 @@ else
             if round(v0.amp) == 0 % TODO: should be limited, not rounded
                 max_q1 = pts(1,:) + 3*v0UVec; % for orientation, constant could be used to control acceleration
             else
-                max_q1 = pts(1,:) + 0.5*norm([obst.x, obst.y]-pts(1,:))^2/dot(v0UVec,[obst.x, obst.y]-pts(1,:)) * v0UVec; % assuming the voronoi edge is with the obstacle
+                max_q1 = pts(1,:) + 0.5*norm([dangerObst.x, dangerObst.y]-pts(1,:))^2/dot(v0UVec,[dangerObst.x, dangerObst.y]-pts(1,:)) * v0UVec; % assuming the voronoi edge is with the obstacle
             end
             % max_q2 is equal to max_q3
             % max_q3 is computed such that max_q1p1max_q3 is the biggest triangle not
             %   intersecting an obstacle.
             max_q1ToObstacle = obstVec - max_q1;
-            rotDir = (atan2(pts(2,2),pts(2,1))-atan2(obst.y,obst.x)) / abs(atan2(pts(2,2),pts(2,1))-atan2(obst.y,obst.x)); % direction in which to rotate the vecToObst
-            rotAng = rotDir*asin(obst.radius/norm(max_q1ToObstacle)); % angle to rotate p0ToObstacle by
+            rotDir = (atan2(pts(2,2),pts(2,1))-atan2(dangerObst.y,dangerObst.x)) / abs(atan2(pts(2,2),pts(2,1))-atan2(dangerObst.y,dangerObst.x)); % direction in which to rotate the vecToObst
+            rotAng = rotDir*asin(dangerObst.radius/norm(max_q1ToObstacle)); % angle to rotate p0ToObstacle by
             max_q1ToQ3 = max_q1ToObstacle * [cos(rotAng), sin(rotAng); -sin(rotAng), cos(rotAng)];
             alpha = [max_q1ToQ3(2)/max_q1ToQ3(1), -1]; % vector to make life easier
             s = (dot(max_q1,alpha) - dot(pts(2,:),alpha))/(dot(pts(3,:),alpha) - dot(pts(2,:),alpha));
@@ -185,8 +189,8 @@ else
             % max_q2 is computed such that p0p1max_q2 is the biggest triangle not
             %   intersecting an obstacle.
             p0ToObstacle = obstVec - pts(1,:);
-            rotDir = (atan2(pts(2,2),pts(2,1))-atan2(obst.y,obst.x)) / abs(atan2(pts(2,2),pts(2,1))-atan2(obst.y,obst.x)); % direction in which to rotate the vecToObst
-            rotAng = rotDir*asin(obst.radius/norm(p0ToObstacle)); % angle to rotate p0ToObstacle by
+            rotDir = (atan2(pts(2,2),pts(2,1))-atan2(dangerObst.y,dangerObst.x)) / abs(atan2(pts(2,2),pts(2,1))-atan2(dangerObst.y,dangerObst.x)); % direction in which to rotate the vecToObst
+            rotAng = rotDir*asin(dangerObst.radius/norm(p0ToObstacle)); % angle to rotate p0ToObstacle by
             p0ToQ2 = p0ToObstacle * [cos(rotAng), sin(rotAng); -sin(rotAng), cos(rotAng)];
             alpha = [p0ToQ2(2)/p0ToQ2(1), -1]; % vector to make life easier
             s = (dot(pts(1,:),alpha) - dot(pts(2,:),alpha))/(dot(pts(3,:),alpha) - dot(pts(2,:),alpha));
@@ -336,6 +340,40 @@ curve = points2Curve(Q);
                 obstInPolygon.y = [obstInPolygon.y; obst.y(k)];
                 obstInPolygon.radius = [obstInPolygon.radius; obst.radius(k)];
             end
+        end
+    end
+
+    function [bool] = v0IntersectsObstacle(pts,obst,v0UVec)
+        bool = false;
+        for i = 1:length(obst.x)
+            obstvec = [obst.x(i), obst.y(i)];
+            distObstToV0 = norm((pts(1,:)-obstvec) - dot(pts(1,:)-obstvec,v0UVec)*v0UVec);
+            if distObstToV0 < obst.radius(i)
+                bool = true;
+                return;
+            end
+        end
+    end
+
+    function [dangerObst] = findMostDangerousObstacle(obstInPolygon,pts)
+        if isempty(obstInPolygon.x)
+            dangerObst = struct('x',[],'y',[],'radius',[]);
+        elseif length(obstInPolygon.x) == 1
+            dangerObst = obstInPolygon;
+        else
+            angles = zeros(1,length(obstInPolygon.x));
+            for i = 1:length(obstInPolygon.x)
+                p0Obst = [obstInPolygon.x(i), obstInPolygon.y(i)]-pts(1,:);
+                p0Obst_dist = norm(p0Obst);
+                p0ObstUVec = p0Obst/p0Obst_dist;
+                p0p1UVec = (pts(2,:)-pts(1,:))/norm(pts(2,:)-pts(1,:));
+                % angle between p0p1 and edge of obstacle area
+                % calculated as angle between p0p1 and p0-obstacle minus
+                % angle between p0-obstacle and p0-edgeOfObstacle
+                angles(i) = abs(acos(dot(p0ObstUVec,p0p1UVec))) - abs(asin(obstInPolygon.radius(i)/p0Obst_dist));
+            end
+            ind = find(angles==min(angles),1);
+            dangerObst = struct('x',obstInPolygon.x(ind),'y',obstInPolygon.y(ind),'radius',obstInPolygon.radius(ind));
         end
     end
 end
