@@ -26,9 +26,6 @@ center = [center; [6493, ptStart]; [6494, ptEnd]];
 % Find adjacent centers + triangles
 adjacentCenter = findAdjacentCenter(nCombinations, validCombinations);
 
-% Filter double combinations (for example 1-8 & 8-1)
-newadjacentCenter = filterDoubleComb(adjacentCenter);
-
 % Lines from start/end to center points
 [startComb, endComb] = findPointInRadius(ptStart, ptEnd, nCombinations, center);
 
@@ -41,6 +38,8 @@ elseif ~isempty(startComb) && isempty(endComb)
 else
     allComb = [adjacentCenter; startComb; endComb];
 end
+
+allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
 
 %% Functions
     function [center, radius] = createCircumcircles(combs, ptObject, nCombinations)
@@ -248,24 +247,5 @@ end
                 endComb(i,:) = [6494 centerInRadiusEnd(i)];
             end
         end
-    end
-
-    function adjacentCenter = filterDoubleComb(adjacentCenter)
-        newAdjacentCenter = adjacentCenter;
-        [n,~] = size(adjacentCenter);
-        for i = 1:n
-            for k = 1:n
-                if k~=i
-                    if ((adjacentCenter(i,1) == adjacentCenter(k,1)) && ...
-                            (adjacentCenter(i,2) == adjacentCenter(k,2))) ...
-                            || ((adjacentCenter(i,2) == adjacentCenter(k,1)) && ...
-                            (adjacentCenter(i,1) == adjacentCenter(k,2)))
-                        adjacentCenter(i,:) = [0 0];
-                    end
-                end
-            end
-        end
-        adjacentCenter(~any(adjacentCenter,2),:) = [];
-    end
-                        
+    end                        
 end
