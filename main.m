@@ -2,22 +2,36 @@ clear,clc;
 %% MAIN CODE (pseudo style)
 
 % Get information from world_state
+% This is not possible now so everything is defined/generated
 %  - Struct objects (.x,.y,.radius)
 %  - Current robot position and velocity
 %  - Field size [x, y]
 fieldSize = [120, 90];
-obst = struct('x',[-40, 20, 0, -10]','y',[-40, 20, -20, 0]','radius',10);
-ptStart = [-40, -20];
 v0 = struct('amp',10,'theta',0.5*pi);
 
-% Get goal orientation, position and velocity
-ptEnd = [40, 20];
+% Generate objects and start/end point (is received from world in real code)
+nObjects = 15; % used for testing stuff
+obj = [rand(nObjects,1)*(fieldSize(1)/2) rand(nObjects,1)*(fieldSize(2)/2)];
+ptObject = [fieldCoordinates; obj];
+m = randi([-1 1], nObjects,2); % generate random -1 1 matrix
+m(~m) = 1; % turn zeros into 1
+ptObject(5:end,:) = ptObject(5:end,:).*m; % multiply so it's not only positive
+ptStart = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)]*m(1);
+ptEnd = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)]*m(1);
+
+% Set 
+fieldCoordinates = [fieldSize(1) fieldSize(2); ...
+    -fieldSize(1) fieldSize(2); -fieldSize(1) -fieldSize(2); ...
+    fieldSize(1) -fieldSize(2)]/2;
+scaleFactor = 1; % random value, to determine the partition of the radius
+[nObjects,~]=size(ptObject); % this one should be used for real stuff
 
 % Get Voronoi diagram
-%  - Matrix (numberNodes-by-3) nodes = [ID, x, y]
-%  - Matrix (numberSegments-by-3) segments = [segmentID, Node1ID, Node2ID]
-[nodes, segments] = makeVoronoi(fieldSize, obst, ptStart, ptEnd, v0);
+%  - Matrix with adjacent points in the diagram
+%  - Change name function from voronoiPlanning to makeVoronoi
+allComb = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, scaleFactor);
 
+%%
 % Get shortest path
 %  - Matrix (numberPathNodes-by-3) path = [ID, x, y]
 %   (this includes the start and end nodes)
