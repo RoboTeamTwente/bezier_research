@@ -110,6 +110,7 @@ if isempty(obstInPolygon.x)
             % only parameter to minimize curvature
             b = 1;
             
+            Q(1,:) = pts(1,:); % q0 = p0
             Q(2,:) = pts(2,:) + s*(pts(3,:)-pts(2,:));
             Q(3,:) = Q(2,:) + b*(max_q2-Q(2,:));
             Q(4,:) = []; % only 3 control points needed
@@ -204,6 +205,7 @@ else
             % only parameter to minimize curvature
             b = 0.5;
             
+            Q(1,:) = pts(1,:); % q0 = p0
             Q(2,:) = pts(2,:) + s*(pts(3,:)-pts(2,:));
             Q(3,:) = Q(2,:) + b*(max_q2-Q(2,:));
             Q(4,:) = []; % only 3 control points needed
