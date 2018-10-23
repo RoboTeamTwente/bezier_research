@@ -54,7 +54,7 @@ if isempty(obstInPolygon.x)
             % Determine maxes for parameters
             % max_q2 and max_q1 lay on the edges of the voronoi diagram
             if round(v0.amp) == 0 % TODO: should be limited, not rounded
-                max_q1 = pts(1,:) + 3*v0UVec; % for orientation, constant could be used to control acceleration
+                max_q1 = pts(1,:) + 10*v0UVec; % for orientation, constant could be used to control acceleration
             else
                 max_q1 = pts(1,:) + v0.amp*v0UVec; % TODO: incorporate Voronoi
             end
@@ -79,9 +79,9 @@ if isempty(obstInPolygon.x)
             % Determine maxes for parameters
             % max_q1 lays on the edge of the voronoi diagram on the line p0 + t*v0
             if round(v0.amp) == 0 % TODO: should be limited, not rounded
-                max_q1 = pts(1,:) + 3*v0UVec; % for orientation, constant could be used to control acceleration
+                max_q1 = pts(1,:) + 10*v0UVec; % for orientation, constant could be used to control acceleration
             else
-                max_q1 = pts(1,:) + 1.5 * v0UVec; % TODO: incorporate Voronoi
+                max_q1 = pts(1,:) + 10 * v0UVec; % TODO: incorporate Voronoi
             end
             % max_q2 is equal to max_q3
             % max_q3 is computed such that max_q1p1max_q3 is the biggest triangle not
@@ -122,7 +122,7 @@ else
             % Determine maxes for parameters
             % max_q2 and max_q1 lay on the edges of the voronoi diagram
             if round(v0.amp) == 0 % TODO: should be limited, not rounded
-                max_q1 = pts(1,:) + 3*v0UVec; % for orientation, constant could be used to control acceleration
+                max_q1 = pts(1,:) + 10*v0UVec; % for orientation, constant could be used to control acceleration
             else
                 max_q1 = pts(1,:) + v0.amp*v0UVec; % TODO: incorporate Voronoi
             end
@@ -156,9 +156,9 @@ else
             % Determine maxes for parameters
             % max_q1 lays on the edge of the voronoi diagram on the line p0 + t*v0
             if round(v0.amp) == 0 % TODO: should be limited, not rounded
-                max_q1 = pts(1,:) + 3*v0UVec; % for orientation, constant could be used to control acceleration
+                max_q1 = pts(1,:) + 10*v0UVec; % for orientation, constant could be used to control acceleration
             else
-                max_q1 = pts(1,:) + 0.5*norm([dangerObst.x, dangerObst.y]-pts(1,:))^2/dot(v0UVec,[dangerObst.x, dangerObst.y]-pts(1,:)) * v0UVec; % assuming the voronoi edge is with the obstacle
+                max_q1 = pts(1,:) + 10*v0UVec; % TODO: Voronoi
             end
             % max_q2 is equal to max_q3
             % max_q3 is computed such that max_q1p1max_q3 is the biggest triangle not

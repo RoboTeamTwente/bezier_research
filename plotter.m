@@ -1,6 +1,7 @@
-function plotter(allComb, center, path, ptObject)
+function plotter(allComb, center, path, ptObject, curve, v0)
 % Plot all points and line segments for debugging purposes
 hold on
+%% Lines
 for i = 1:length(allComb(:,1))
     n1 = allComb(i,2);
     n2 = allComb(i,3);
@@ -11,6 +12,10 @@ end
 for i = 2:length(path(:,1))
     line([path(i,2), path(i-1,2)],[path(i,3), path(i-1,3)],'color','m','linestyle','-','linewidth',2)
 end
+plot(curve(1,:),curve(2,:),'-k','linewidth',2);
+quiver(center(end-1,2),center(end-1,3),v0.amp*cos(v0.theta),v0.amp*sin(v0.theta),'color','b','linewidth',3);
+
+%% Points
 plot(ptObject(:,1),ptObject(:,2),'xr','MarkerSize',20); plot(ptObject(:,1),ptObject(:,2),'or','MarkerSize',20);
 plot(center(:,2),center(:,3),'.b','MarkerSize',15);
 plot(center(end-1,2),center(end-1,3),'.g','MarkerSize',25);

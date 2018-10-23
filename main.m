@@ -19,8 +19,8 @@ ptObject = [fieldCoordinates; obj];
 m = randi([-1 1], nObjects,2); % generate random -1 1 matrix
 m(~m) = 1; % turn zeros into 1
 ptObject(5:end,:) = ptObject(5:end,:).*m; % multiply so it's not only positive
-ptStart = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)]*m(1);
-ptEnd = [rand(1,1)*(fieldSize(1)/2) rand(1,1)*(fieldSize(2)/2)]*m(1);
+ptStart = fieldSize.*(rand(1,2)-0.5);
+ptEnd = fieldSize.*(rand(1,2)-0.5);
 
 % Set
 [nObjects,~]=size(ptObject); % this one should be used for real stuff
@@ -42,17 +42,18 @@ else
     [path] = findShortestPath(center, allComb, center(end-1,1), center(end,1));
 end
 
-figure
-plotter(allComb,center,path,ptObject)
-axis([-fieldSize(1) fieldSize(1), -fieldSize(2) fieldSize(2)]*1.1/2)
-
 % Take the first 3 nodes from path and create first path of Bezier Curve
 %   (the end node of this first path will be somewhere on the edge between
 %    the second and third node)
-if length(path(:,1)) > 2
-    obst = struct('x',ptObject(:,1),'y',ptObject(:,2),'radius',5*ones(nObjects,1));
-    [curve] = createBezierCurve(path,v0,obst);
+if length(path(:,1)) < 3
+    path = [path(1,:); [1 v0.amp*cos(v0.theta) v0.amp*sin(v0.theta)]; path(end,:)];
 end
+obst = struct('x',ptObject(:,1),'y',ptObject(:,2),'radius',5*ones(nObjects,1));
+[curve] = createBezierCurve(path,v0,obst);
+
+figure
+plotter(allComb,center,path,ptObject,curve,v0)
+axis([-fieldSize(1) fieldSize(1), -fieldSize(2) fieldSize(2)]*1.1/2)
 
 % start at the third node
 % (set of control points now contains 2 points)
