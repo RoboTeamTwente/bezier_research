@@ -1,4 +1,4 @@
-function [allComb, center] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd)
+function [allComb, center] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, robotDiameter)
 % Generates a Voronoi diagram
 %
 % INPUTS
@@ -11,14 +11,18 @@ function [allComb, center] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd)
 % allComb = matrix in which all points that are connected in the Voronoi
 % diagram are put. 1 row = 1 combination of 2 points.
 
+% Merge objects if 2 robots are 2*diameter near to each other
+ptObject = mergeObjects(ptObject, nObjects, robotDiameter);
+[nObjects,~] = size(ptObject);
+
 % All triangles
 triangleCombinations = possibleCombinations(1:nObjects,3); 
 
-% Compute circumcircles
+%% Compute circumcircles
 [nCombinations,~] = size(triangleCombinations);
 [center, radius] = createCircumcircles(triangleCombinations, ptObject, nCombinations);
 
-% Receive delaunay points + combinations
+%% Receive delaunay points + combinations
 [validCenter, validCombinations] = makeDelaunay(ptObject, center, radius, nCombinations, nObjects, triangleCombinations);
 [nCombinations,~] = size(validCenter);
 center = [(1:nCombinations)' validCenter];
@@ -230,5 +234,21 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
             p = p + 1;
         end
     end
-    end                    
+    end
+
+    function [ptObject] = mergeObjects(ptObject, nObjects, robotDiameter)
+    for i = 1:nObjects
+        for k = 1:nObjects
+            if i ~= k
+                dist = sqrt((ptObject(i,1)-ptObject(k,1))^2+(ptObject(i,2)-ptObject(k,1))^2);
+                if dist <= 3*robotDiameter 
+                    coord = [(ptObject(i,1)+ptObject(k,1))/2 (ptObject(i,2)+ptObject(k,2))/2];
+                    ptObject(i,:) = coord;
+                    ptObject(k,:) = [0 0];
+                end
+            end
+        end
+    end
+    ptObject = ptObject(any(ptObject,2),:);  
+    end
 end
