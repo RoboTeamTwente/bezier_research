@@ -15,12 +15,12 @@ v0 = struct('amp',10,'theta',0.5*pi);
 % Generate objects and start/end point (is received from world in real code)
 nObjects = 5; % used for testing stuff
 obj = [rand(nObjects,1)*(fieldSize(1)/2) rand(nObjects,1)*(fieldSize(2)/2)];
-ptObject = [fieldCoordinates; obj];
-m = randi([-1 1], nObjects,2); % generate random -1 1 matrix
-m(~m) = 1; % turn zeros into 1
-ptObject(5:end,:) = ptObject(5:end,:).*m; % multiply so it's not only positive
 ptStart = fieldSize.*(rand(1,2)-0.5);
 ptEnd = fieldSize.*(rand(1,2)-0.5);
+ptObject = [fieldCoordinates; ptStart; ptEnd; obj];
+m = randi([-1 1], nObjects,2); % generate random -1 1 matrix
+m(~m) = 1; % turn zeros into 1
+ptObject(7:end,:) = ptObject(7:end,:).*m; % multiply so it's not only positive
 
 % Set
 [nObjects,~]=size(ptObject); % this one should be used for real stuff
@@ -53,7 +53,11 @@ obst = struct('x',ptObject(:,1),'y',ptObject(:,2),'radius',5*ones(nObjects,1));
 
 [curve] = finishBezierCurve(path,obst,curve);
 
+rowsToNotPlot = [5 6]; % to not plot object cross on start & end point
+ptObject(rowsToNotPlot,:) = [];
+
 figure
+set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
 plotter(allComb,center,path,ptObject,curve,v0)
 axis([-fieldSize(1) fieldSize(1), -fieldSize(2) fieldSize(2)]*1.1/2)
 
