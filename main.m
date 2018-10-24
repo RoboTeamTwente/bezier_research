@@ -6,7 +6,9 @@ clear all; close all; clc;
 %  - Struct objects (.x,.y,.radius)
 %  - Current robot position and velocity
 %  - Field size [x, y]
-fieldSize = [120, 90];
+%  - Size of robot
+robotDiameter = 18; % robot radius in cm
+fieldSize = [1200, 900]; % field dimensions in cm
 fieldCoordinates = [fieldSize(1) fieldSize(2); ...
     -fieldSize(1) fieldSize(2); -fieldSize(1) -fieldSize(2); ...
     fieldSize(1) -fieldSize(2)]/2;
@@ -29,7 +31,7 @@ ptObject(7:end,:) = ptObject(7:end,:).*m; % multiply so it's not only positive
 %  - Matrix with connected points in the Voronoi diagram
 %  - 6493 = start, 6494 = end
 %  - Change name function from voronoiPlanning to makeVoronoi
-[allComb, center, validCombinations, validCenter] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd);
+[allComb, center] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, robotDiameter);
 
 %%
 % Get shortest path
@@ -48,17 +50,18 @@ end
 if length(path(:,1)) < 3
     path = [path(1,:); [1 path(1,2)+v0.amp*cos(v0.theta) path(1,3)+v0.amp*sin(v0.theta)]; path(end,:)];
 end
-obst = struct('x',ptObject(:,1),'y',ptObject(:,2),'radius',5*ones(nObjects,1));
+
+rowsToNotUse = [1 2]; % remove start & end point for calculation & plotting
+ptObject(rowsToNotUse,:) = [];
+nObjects = nObjects - 2;
+
+obst = struct('x',ptObject(:,1),'y',ptObject(:,2),'radius',robotDiameter*ones(nObjects,1));
 [curve] = createBezierCurve(path,v0,obst);
-
 [curve] = finishBezierCurve(path,obst,curve);
-
-rowsToNotPlot = [1 2]; % to not plot object cross on start & end point
-ptObject(rowsToNotPlot,:) = [];
 
 figure
 set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
-plotter(allComb,center,path,ptObject,curve,v0)
+plotter(allComb, center, path, ptObject, curve, v0, nObjects)
 axis([-fieldSize(1) fieldSize(1), -fieldSize(2) fieldSize(2)]*1.1/2)
 
 % do finishBezierCurve
