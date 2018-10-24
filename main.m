@@ -1,4 +1,4 @@
-clear,clc;
+clear all; close all; clc;
 % MAIN CODE (pseudo style)
 
 % Get information from world_state
@@ -13,11 +13,11 @@ fieldCoordinates = [fieldSize(1) fieldSize(2); ...
 v0 = struct('amp',10,'theta',0.5*pi);
 
 % Generate objects and start/end point (is received from world in real code)
-nObjects = 5; % used for testing stuff
+nObjects = 15; % used for testing stuff
 obj = [rand(nObjects,1)*(fieldSize(1)/2) rand(nObjects,1)*(fieldSize(2)/2)];
 ptStart = fieldSize.*(rand(1,2)-0.5);
 ptEnd = fieldSize.*(rand(1,2)-0.5);
-ptObject = [fieldCoordinates; ptStart; ptEnd; obj];
+ptObject = [ptStart; ptEnd; fieldCoordinates; obj];
 m = randi([-1 1], nObjects,2); % generate random -1 1 matrix
 m(~m) = 1; % turn zeros into 1
 ptObject(7:end,:) = ptObject(7:end,:).*m; % multiply so it's not only positive
@@ -29,7 +29,7 @@ ptObject(7:end,:) = ptObject(7:end,:).*m; % multiply so it's not only positive
 %  - Matrix with connected points in the Voronoi diagram
 %  - 6493 = start, 6494 = end
 %  - Change name function from voronoiPlanning to makeVoronoi
-[allComb, center] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd);
+[allComb, center, validCombinations, validCenter] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd);
 
 %%
 % Get shortest path
@@ -53,7 +53,7 @@ obst = struct('x',ptObject(:,1),'y',ptObject(:,2),'radius',5*ones(nObjects,1));
 
 [curve] = finishBezierCurve(path,obst,curve);
 
-rowsToNotPlot = [5 6]; % to not plot object cross on start & end point
+rowsToNotPlot = [1 2]; % to not plot object cross on start & end point
 ptObject(rowsToNotPlot,:) = [];
 
 figure
