@@ -218,10 +218,6 @@ if round(v0.amp) == 0 % TODO: should be limited, not rounded
 end
 curve = points2Curve(Q);
 
-%% Extend curve with straight line to P2.
-straight = points2Curve([Q(end,:); pts(3,:)]);
-curve = [curve, straight];
-
 
 %% FUNCTIONS
     function [bool] = onSameSide(pts,v0)
