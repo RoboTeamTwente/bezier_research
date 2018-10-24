@@ -28,7 +28,7 @@ center = [center; [6493, ptStart]; [6494, ptEnd]];
 adjacentCenter = findAdjacentCenter(nCombinations, validCombinations);
 
 % Lines from start/end to center points
-[startComb, endComb] = findPointInRadius(ptStart, ptEnd, nCombinations, center);
+[startComb, endComb] = getStartEndLines(validCombinations, center, nCombinations);
 
 if isempty(startComb) && isempty(endComb)
     allComb = adjacentCenter;
@@ -212,41 +212,23 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
     end
     end
 
-    function [startComb, endComb] = findPointInRadius(ptStart, ptEnd, nCombinations, center)
-    p = 1;
-    centerInRadiusStart = [];
-    centerInRadiusEnd = []; 
+    function [startComb, endComb] = getStartEndLines(validCombinations, center, nCombinations)
     startComb = [];
     endComb = [];
-    dist = sqrt((ptStart(1)-ptEnd(1))^2+(ptStart(2)-ptEnd(2))^2);
-        for i = 1:nCombinations
-            distToPoint(i) = sqrt((ptStart(1)-center(i,2))^2+(ptStart(2)-center(i,3))^2);
-            if distToPoint(i) < dist
-                centerInRadiusStart(p) = center(i,1);
-                p = p + 1;
-            end
-        end
     p = 1;
-        for i = 1:nCombinations
-            distToPoint(i) = sqrt((ptEnd(1)-center(i,2))^2+(ptEnd(2)-center(i,3))^2);
-            if distToPoint(i) < dist
-                centerInRadiusEnd(p) = center(i,1);
+    q = 1;
+    for i = 1:nCombinations
+        if validCombinations(i,1) == 1
+            if validCombinations(i,2) == 2
+                endComb(p,:) = [6494 center(i,1)];
                 p = p + 1;
             end
+            startComb(q,:) = [6493 center(i,1)];
+            q = q + 1;
+        elseif validCombinations(i,1) == 2
+            endComb(p,:) = [6494 center(i,1)];
+            p = p + 1;
         end
-
-        [~,n] = size(centerInRadiusStart);
-        if ~isempty(centerInRadiusStart)
-            for i = 1:n
-               startComb(i,:) = [6493 centerInRadiusStart(i)];
-            end
-        end
-
-        [~,n] = size(centerInRadiusEnd);
-        if ~isempty(centerInRadiusEnd)
-            for i = 1:n
-                endComb(i,:) = [6494 centerInRadiusEnd(i)];
-            end
-        end
-    end                        
+    end
+    end                    
 end
