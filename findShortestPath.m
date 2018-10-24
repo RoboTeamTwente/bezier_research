@@ -11,12 +11,14 @@ numSegs = length(segments(:,1));
 endInd = find(nodesIN(:,1)==endID,1); % index of end node in the nodes input
 for i = 1:numNodes
     j = nodesIN(i,1); % ID of node
+    ind = nodesIN(:,1) == j;
     dist_to_end = sqrt((nodesIN(i,2)-nodesIN(endInd,2))^2 + ((nodesIN(i,3)-nodesIN(endInd,3))^2)); % euclidean distance to end node
-    nodes(j) = struct('ID',j,'x',nodesIN(j,2),'y',nodesIN(j,3),'via',NaN,'dist_start',inf,'dist_end',dist_to_end);
+    nodes(j) = struct('ID',j,'x',nodesIN(ind,2),'y',nodesIN(ind,3),'via',NaN,'dist_start',inf,'dist_end',dist_to_end,'visited',false);
 
     if nodes(j).ID == startID
         % visit start node
         nodes(j).dist_start = 0;
+        nodes(j).visited = true;
     end
 end
 
@@ -27,16 +29,18 @@ while queue(1) ~= endID % while the end node is not on top of the queue
     % Expand the node on top of the queue (parent node)
     parentID = queue(1);
     queue(1) = []; % delete node from list, it is done now
-    segID = segments(segments(:,2)==parentID, 1); % ID's of segments that are connected to parent node
-    for i = 1:length(segID)
-        childID = segments(segID(i),3); % ID of node on the other side of the segment
+    nodes(parentID).visited = true;
+    children = [segments(segments(:,2)==parentID, 3); segments(segments(:,3)==parentID, 2)]; % ID's of nodes that are connected to parent node
+    for i = 1:length(children)
+        childID = children(i); % ID of node on the other side of the segment
+        if ~nodes(childID).visited
         dist_to_start = nodes(parentID).dist_start + sqrt((nodes(parentID).x - nodes(childID).x)^2 + (nodes(parentID).y - nodes(childID).y)^2);
         %cost = dist_to_start + nodes(childID).dist_end;
         
         % Update node info
         nodes(childID).dist_start = dist_to_start;
         nodes(childID).via = parentID;
-        
+
         % Update queue
         if isempty(queue)
             queue = childID;
@@ -57,6 +61,7 @@ while queue(1) ~= endID % while the end node is not on top of the queue
                     break;
                 end
             end
+        end
         end
     end
     
