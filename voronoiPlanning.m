@@ -1,5 +1,6 @@
 function [allComb, center] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd)
-% Generate a Voronoi diagram
+% Generates a Voronoi diagram
+%
 % INPUTS
 % nObjects = the amount of objects (robots) that must be avoided
 % ptObject = the coordinates of the objects
