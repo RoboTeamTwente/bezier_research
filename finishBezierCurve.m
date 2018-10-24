@@ -7,7 +7,7 @@ function [curve] = finishBezierCurve(path,obst,curve)
 % TODO: What if the minimum curvature is still too high?
 
 pts = path(:,2:3); % path points [X, Y]
-pos_margin = 1; % max distance to which to approach the end point
+pos_margin = 0.5; % max distance to which to approach the end point
 
 % If the path is not long enough, return
 if isempty(path) || length(path(:,1)) < 3
@@ -27,13 +27,15 @@ ptStart = curve(:,end)'; % start of second part of curve
 % If the starting point is equal to one of the path nodes, add an
 % extrapolation of p1p2 for velocity continuity
 if norm(pts(3,:)-ptStart) < pos_margin
-    Q = [ptStart; ptStart+0.5*(pts(3,:)-pts(2,:))]; % add an extrapolation of p1p2 to ptStart to assure velocity continuity
+    Q = [ptStart; pts(4,:)]; 
+    pStartCount = 5;
 else
     Q = [ptStart; pts(3,:)];
+    pStartCount = 4;
 end
 
-if length(pts(:,1)) > 3
-    for pCount = 4:length(pts(:,1))
+if length(pts(:,1)) >= pStartCount
+    for pCount = pStartCount:length(pts(:,1))
         obstInPolygon = findObstaclesInPolygon([Q; pts(pCount,:)],obst);
         if isempty(obstInPolygon.x)% convex including next node does not contain any obstacle
             Q = [Q; pts(pCount,:)];% add node to set of control points
@@ -41,12 +43,21 @@ if length(pts(:,1)) > 3
             % choose point on edge from last node to next node such that the
             %   convex does not contain any obstacle
             % add this point to the set of control points
-            [~, angle] = findMostDangerousObstacleWithAngle(obstInPolygon,[Q; pts(pCount,:)]); % avoid this obstacle and you avoid all of them
-            p0PastObst = [Q(1,:) * [cos(angle), sin(angle); -sin(angle), cos(angle)], 0]; % rotate p0p1
-            p0p1Vec = [Q(2,:)-Q(1,:), 0]; % make 3D for cross product
-            p1p2Vec = [pts(pCount,:)-Q(2,:), 0]; % make 3D for cross product
-            s = -norm(cross(p0PastObst,p0p1Vec))/norm(cross(p0PastObst,p1p2Vec));
-            nextCP = Q(2,:) + s*p1p2Vec(1:2); % next control point is somewhere on p1p2
+            [dangerObst] = findMostDangerousObstacle(obstInPolygon,[Q; pts(pCount,:)]); % avoid this obstacle and you avoid all of them
+            p0ToObst = [[dangerObst.x,dangerObst.y]-Q(end-1,:), 0]; % make 3D for dot product
+            ang = asin(dangerObst.radius/norm(p0ToObst)); % angle over which p0ToObst should be rotated
+            p0PastObst = [p0ToObst(1:2) * [cos(ang), sin(ang); -sin(ang), cos(ang)], 0]; % make 3D for cross product
+            p0p1Vec = [Q(end,:)-Q(end-1,:), 0]; % make 3D for cross product
+            p1p2Vec = [pts(pCount,:)-Q(end,:), 0]; % make 3D for cross product
+            if dot(p0PastObst/norm(p0PastObst),p0p1Vec) < dot(p0ToObst/norm(p0ToObst),p0p1Vec)
+                % By rotating p0ToObst, the dot product with p0p1 should
+                % become bigger. Otherwise, you should rotate the other
+                % way around.
+                ang = -ang;
+                p0PastObst = [p0ToObst(1:2) * [cos(ang), sin(ang); -sin(ang), cos(ang)], 0];
+            end
+            s = norm(cross(p0PastObst,p0p1Vec))/norm(cross(p1p2Vec,p0PastObst));
+            nextCP = Q(end,:) + s*p1p2Vec(1:2); % next control point is somewhere on p1p2
             Q = [Q; nextCP];
             
             % make bezier curve and add it to the total curve
@@ -55,7 +66,7 @@ if length(pts(:,1)) > 3
             
             % empty set of control points
             % add last point of previous curve
-            Q = curve(:,end)';
+            Q = [curve(:,end)'; pts(pCount,:)];
         end
     end
 end
@@ -165,10 +176,11 @@ end
         end
     end
 
-    function [dangerObst, angle] = findMostDangerousObstacleWithAngle(obstInPolygon,pts)
+    function [dangerObst] = findMostDangerousObstacle(obstInPolygon,pts)
         if isempty(obstInPolygon.x)
             dangerObst = struct('x',[],'y',[],'radius',[]);
-            angle = [];
+        elseif length(obstInPolygon.x) == 1
+            dangerObst = obstInPolygon;
         else
             angles = zeros(1,length(obstInPolygon.x));
             for i = 1:length(obstInPolygon.x)
@@ -182,7 +194,6 @@ end
                 angles(i) = abs(acos(dot(p0ObstUVec,p0p1UVec))) - abs(asin(obstInPolygon.radius(i)/p0Obst_dist));
             end
             ind = find(angles==min(angles),1);
-            angle = min(angles);
             dangerObst = struct('x',obstInPolygon.x(ind),'y',obstInPolygon.y(ind),'radius',obstInPolygon.radius(ind));
         end
     end
