@@ -10,9 +10,9 @@ for i = 1:length(allComb(:,1))
     line(center([ind1,ind2],2),center([ind1,ind2],3),'color',[0.5 0.5 0.5],'linestyle','--');
 end
 for i = 2:length(path(:,1))
-    line([path(i,2), path(i-1,2)],[path(i,3), path(i-1,3)],'color','m','linestyle','-','linewidth',2)
+    line([path(i,2), path(i-1,2)],[path(i,3), path(i-1,3)],'color','k','linestyle','--','linewidth',2)
 end
-plot(curve(1,:),curve(2,:),'-k','linewidth',2);
+plot(curve(1,:),curve(2,:),'-m','linewidth',2);
 quiver(center(end-1,2),center(end-1,3),v0.amp*cos(v0.theta),v0.amp*sin(v0.theta),'color','b','linewidth',3);
 
 %% Points
