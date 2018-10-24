@@ -46,28 +46,15 @@ end
 %   (the end node of this first path will be somewhere on the edge between
 %    the second and third node)
 if length(path(:,1)) < 3
-    path = [path(1,:); [1 v0.amp*cos(v0.theta) v0.amp*sin(v0.theta)]; path(end,:)];
+    path = [path(1,:); [1 path(1,2)+v0.amp*cos(v0.theta) path(1,3)+v0.amp*sin(v0.theta)]; path(end,:)];
 end
 obst = struct('x',ptObject(:,1),'y',ptObject(:,2),'radius',5*ones(nObjects,1));
 [curve] = createBezierCurve(path,v0,obst);
+
+[curve] = finishBezierCurve(path,obst,curve);
 
 figure
 plotter(allComb,center,path,ptObject,curve,v0)
 axis([-fieldSize(1) fieldSize(1), -fieldSize(2) fieldSize(2)]*1.1/2)
 
-% start at the third node
-% (set of control points now contains 2 points)
-% while % not at the end of the path
-%     if % convex including next node does not contain any obstacle
-%         % add node to set of control points
-%     else
-%         % choose point on edge from last node to next node such that the
-%         %   convex does not contain any obstacle
-%         % add this point to the set of control points
-%
-%         % make bezier curve and add it to the total curve
-%
-%         % empty set of control points
-%         % add last point of previous curve and next node
-%     end
-% end
+% do finishBezierCurve

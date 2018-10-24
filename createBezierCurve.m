@@ -12,8 +12,8 @@ end
 
 Q = zeros(4,2); % control points
 pts = path(:,2:3); % path points [X, Y]
-obstInPolygon = findObstaclesInPolygon(pts,obst);
-dangerObst = findMostDangerousObstacle(obstInPolygon,pts);
+obstInPolygon = findObstaclesInPolygon(pts(1:3,:),obst);
+dangerObst = findMostDangerousObstacle(obstInPolygon,pts(1:3,:));
 
 
 %% Determine which case we have
@@ -33,7 +33,7 @@ if abs(v0.theta-angleOf(pts(2,:)-pts(1,:))) < angDiff && abs(v0.theta-angleOf(pt
     % Case IV
     currentCase = 4;
     disp('case IV')
-elseif onSameSide(pts,v0UVec)
+elseif onSameSide(pts(1:3,:),v0UVec)
     % Case III
     currentCase = 3;
     disp('case III')
@@ -217,10 +217,6 @@ if round(v0.amp) == 0 % TODO: should be limited, not rounded
     Q = [Q(1,:); Q(1,:); Q(2:end,:)];
 end
 curve = points2Curve(Q);
-
-%% Extend curve with straight line to P2.
-straight = points2Curve([Q(end,:); pts(3,:)]);
-curve = [curve, straight];
 
 
 %% FUNCTIONS
