@@ -1,4 +1,4 @@
-function [allComb, center, startOrientationCP] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, robotDiameter)
+function [allComb, center, startOrientationCP] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, robotDiameter, startOrientationAngle)
 % Generates a Voronoi diagram
 %
 % INPUTS
@@ -300,6 +300,11 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
 
     linePoints = [center(adjacentAngle(1,1),2) center(adjacentAngle(1,1),3); ...
     center(adjacentAngle(2,1),2) center(adjacentAngle(2,1),3)];
+
+    orientationMargin = 100;
+    h = orientationMargin * sin(oAngle);
+    l = orientationMargin * cos(oAngle);
+    ptStartOrientation = [pt(1)+l, pt(2)+h];
     
     a = (linePoints(1,2)-linePoints(2,2))/(linePoints(1,1)-linePoints(2,1));
     b = linePoints(1,2) - a * linePoints(1,1);
