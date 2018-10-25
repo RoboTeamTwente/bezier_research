@@ -11,7 +11,7 @@ function [allComb, center] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd,
 % allComb = matrix in which all points that are connected in the Voronoi
 % diagram are put. 1 row = 1 combination of 2 points.
 
-% Merge objects if 2 robots are 2*diameter near to each other
+% Merge objects if 2 robots are 3*diameter near to each other
 ptObject = mergeObjects(ptObject, nObjects, robotDiameter);
 [nObjects,~] = size(ptObject);
 
@@ -258,16 +258,16 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
     end
 
     function [angle] = getAngles(ptStart, allComb, center, nCombinations)
-    angleStart = [];
+    angle = [];
     p = 1;
     for i = 1:nCombinations
         if allComb(i,2) == 6493
             index = allComb(i,3);
             x = center(index,2);
             y = center(index,3);
-            angleStart(p) = atan((y-ptStart(2))/(x-ptStart(1)));
+            angle(p) = atan((y-ptStart(2))/(x-ptStart(1)));
             if x <= ptStart(1) % add pi for these angles 
-                angleStart(p) = angleStart(p) + pi;
+                angle(p) = angle(p) + pi;
             end
             p = p + 1;
         end
