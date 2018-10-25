@@ -12,8 +12,8 @@ function [allComb, center] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd,
 % diagram are put. 1 row = 1 combination of 2 points.
 
 % Merge objects if 2 robots are 3*diameter near to each other
-ptObject = mergeObjects(ptObject, nObjects, robotDiameter);
-[nObjects,~] = size(ptObject);
+% ptObject = mergeObjects(ptObject, nObjects, robotDiameter);
+% [nObjects,~] = size(ptObject);
 
 % All triangles
 triangleCombinations = possibleCombinations(1:nObjects,3); 
@@ -241,18 +241,18 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
     end
     end
 
-    function [ptObject] = mergeObjects(ptObject, nObjects, robotDiameter)
-    for i = 3:nObjects % start at 3 so the start & end point are not used
-        for k = 3:nObjects
-            if i ~= k
-                dist = sqrt((ptObject(i,1)-ptObject(k,1))^2+(ptObject(i,2)-ptObject(k,1))^2);
-                if dist <= 3*robotDiameter 
-                    coord = [(ptObject(i,1)+ptObject(k,1))/2 (ptObject(i,2)+ptObject(k,2))/2];
-                    ptObject(i,:) = coord;
-                    ptObject(k,:) = [0 0];
-                end
-            end
-        end
+%     function [ptObject] = mergeObjects(ptObject, nObjects, robotDiameter)
+%     for i = 3:nObjects % start at 3 so the start & end point are not used
+%         for k = 3:nObjects
+%             if i ~= k
+%                 dist = sqrt((ptObject(i,1)-ptObject(k,1))^2+(ptObject(i,2)-ptObject(k,1))^2);
+%                 if dist <= 3*robotDiameter 
+%                     coord = [(ptObject(i,1)+ptObject(k,1))/2 (ptObject(i,2)+ptObject(k,2))/2];
+%                     ptObject(i,:) = coord;
+%                     ptObject(k,:) = [0 0];
+%                 end
+%             end
+%         end
     end
     ptObject = ptObject(any(ptObject,2),:);  
     end
