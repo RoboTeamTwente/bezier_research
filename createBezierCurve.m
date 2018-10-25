@@ -1,4 +1,4 @@
-function [curve,Q] = createBezierCurve(path,v0,obst)
+function [Q] = createBezierCurve(path,v0,obst)
 % Takes in a path with points and spits out a smooth curve passed these
 % points.
 % -> v0:    initial velocity struct (amp, theta)

@@ -1,4 +1,4 @@
-function [curve] = finishBezierCurve(path,obst,curve)
+function [curve] = finishBezierCurve(path,obst,Q)
 % Takes in a path with points and spits out a smooth curve passed these
 % points. This function assumes you already processed the first 3 points
 % -> obst:  list containing obstacles
@@ -15,25 +15,25 @@ if isempty(path) || length(path(:,1)) < 3
 end
 
 % If the curve has already ended, return
-if norm(pts(end,:)-curve(:,end)') < pos_margin
+if norm(pts(end,:)-Q(end,:)) < pos_margin
     % Already at end
     return;
 end
 
 % start at the third node
 % (set of control points now contains 2 points)
-ptStart = curve(:,end)'; % start of second part of curve
 
 % If the starting point is equal to one of the path nodes, add an
 % extrapolation of p1p2 for velocity continuity
-if norm(pts(3,:)-ptStart) < pos_margin
-    Q = [ptStart; pts(4,:)]; 
+if norm(pts(3,:)-Q(end,:)) < pos_margin
+    Q = [Q; pts(4,:)]; 
     pStartCount = 5;
 else
-    Q = [ptStart; pts(3,:)];
+    Q = [Q; pts(3,:)];
     pStartCount = 4;
 end
 
+curve = [];
 if length(pts(:,1)) >= pStartCount
     for pCount = pStartCount:length(pts(:,1))
         obstInPolygon = findObstaclesInPolygon([Q; pts(pCount,:)],obst);
