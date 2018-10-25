@@ -8,15 +8,18 @@ function [curve] = finishBezierCurve(path,obst,Q)
 
 pts = path(:,2:3); % path points [X, Y]
 pos_margin = 0.5; % max distance to which to approach the end point
+curve = [];
 
 % If the path is not long enough, return
 if isempty(path) || length(path(:,1)) < 3
+    curve = points2Curve(Q);
     return;
 end
 
 % If the curve has already ended, return
 if norm(pts(end,:)-Q(end,:)) < pos_margin
     % Already at end
+    curve = points2Curve(Q);
     return;
 end
 
@@ -33,7 +36,6 @@ else
     pStartCount = 4;
 end
 
-curve = [];
 if length(pts(:,1)) >= pStartCount
     for pCount = pStartCount:length(pts(:,1))
         obstInPolygon = findObstaclesInPolygon([Q; pts(pCount,:)],obst);
@@ -57,6 +59,12 @@ if length(pts(:,1)) >= pStartCount
                 p0PastObst = [p0ToObst(1:2) * [cos(ang), sin(ang); -sin(ang), cos(ang)], 0];
             end
             s = norm(cross(p0PastObst,p0p1Vec))/norm(cross(p1p2Vec,p0PastObst));
+            % limit s, should not be necessary?
+            if s > 1
+                s = 1;
+            elseif s < 0
+                s = 0;
+            end
             nextCP = Q(end,:) + s*p1p2Vec(1:2); % next control point is somewhere on p1p2
             Q = [Q; nextCP];
             

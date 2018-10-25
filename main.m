@@ -1,4 +1,4 @@
-clear all; close all; clc;
+clear all; clf; clc;
 % MAIN CODE (pseudo style)
 
 % Get information from world_state
@@ -7,7 +7,7 @@ clear all; close all; clc;
 %  - Current robot position and velocity
 %  - Field size [x, y]
 %  - Size of robot
-robotDiameter = 18; % robot radius in cm
+robotDiameter = 2*9 + 5; % robot radius in cm
 fieldSize = [1200, 900]; % field dimensions in cm
 fieldCoordinates = [fieldSize(1) fieldSize(2); ...
     -fieldSize(1) fieldSize(2); -fieldSize(1) -fieldSize(2); ...
@@ -59,7 +59,7 @@ obst = struct('x',ptObject(:,1),'y',ptObject(:,2),'radius',robotDiameter*ones(nO
 [Q] = createBezierCurve(path,v0,obst);
 [curve] = finishBezierCurve(path,obst,Q);
 
-figure
+figure(1)
 %set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
 plotter(allComb, center, path, ptObject, curve, v0, nObjects)
 axis([-fieldSize(1) fieldSize(1), -fieldSize(2) fieldSize(2)]*1.1/2)
