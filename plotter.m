@@ -17,7 +17,7 @@ quiver(center(end-1,2),center(end-1,3),v0.amp*cos(v0.theta),v0.amp*sin(v0.theta)
 
 %% Points
 plot(ptObject(:,1), ptObject(:,2),'xr');
-viscircles([ptObject(:,1) ptObject(:,2)], 18*ones(nObjects,1));
+viscircles([ptObject(:,1) ptObject(:,2)], 9*ones(nObjects,1)); % 9 = robot radius
 plot(center(:,2),center(:,3),'.b','MarkerSize',15);
 plot(center(end-1,2),center(end-1,3),'.g','MarkerSize',25); % start
 plot(center(end,2),center(end,3),'.r','MarkerSize',25); % end
