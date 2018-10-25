@@ -294,6 +294,10 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
                 [value, index] = min(angle);
                 greaterAngle = [index value];
             end
+            if isempty(smallerAngle)
+                [value, index] = max(angle);
+                smallerAngle = [index value];
+            end
         end
     angleDifGreater = abs(greaterAngle(:,2) - oAngle); 
     angleDifSmaller = abs(smallerAngle(:,2) - oAngle);
