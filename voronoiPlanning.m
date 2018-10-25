@@ -1,4 +1,4 @@
-function [allComb, center] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, robotDiameter)
+function [allComb, center, validCenter, validCombinations] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, robotDiameter)
 % Generates a Voronoi diagram
 %
 % INPUTS
@@ -237,8 +237,8 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
     end
 
     function [ptObject] = mergeObjects(ptObject, nObjects, robotDiameter)
-    for i = 1:nObjects
-        for k = 1:nObjects
+    for i = 3:nObjects % start at 3 so the start & end point are not used
+        for k = 3:nObjects
             if i ~= k
                 dist = sqrt((ptObject(i,1)-ptObject(k,1))^2+(ptObject(i,2)-ptObject(k,1))^2);
                 if dist <= 3*robotDiameter 
