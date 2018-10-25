@@ -91,7 +91,10 @@ if length(pts(:,1)) >= pStartCount
             
             % empty set of control points
             % add last point of previous curve
-            Q = [curve(:,end)'; pts(pCount,:)];
+            a = 20; % parameter that needs optimizing
+            % Maybe add a maximum
+            cPoint = Q(end,:) + a*(Q(end,:) - Q(end-1,:))/norm(Q(end,:) - Q(end-1,:)); % point for continuity
+            Q = [curve(:,end)'; cPoint ; pts(pCount,:)];
         end
     end
 end
