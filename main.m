@@ -1,4 +1,4 @@
-clear all; close all; clc;
+clear all; clf; clc;
 % MAIN CODE (pseudo style)
 
 % Get information from world_state
@@ -7,12 +7,12 @@ clear all; close all; clc;
 %  - Current robot position and velocity
 %  - Field size [x, y]
 %  - Size of robot
-robotDiameter = 18; % robot radius in cm
+robotDiameter = 2*9 + 5; % robot radius in cm
 fieldSize = [1200, 900]; % field dimensions in cm
 fieldCoordinates = [fieldSize(1) fieldSize(2); ...
     -fieldSize(1) fieldSize(2); -fieldSize(1) -fieldSize(2); ...
     fieldSize(1) -fieldSize(2)]/2;
-v0 = struct('amp',10,'theta',0.5*pi);
+v0 = struct('amp',100,'theta',0.25*pi);
 
 % Generate objects and start/end point (is received from world in real code)
 nObjects = 15; % used for testing stuff
@@ -56,12 +56,12 @@ ptObject(rowsToNotUse,:) = [];
 nObjects = nObjects - 2;
 
 obst = struct('x',ptObject(:,1),'y',ptObject(:,2),'radius',robotDiameter*ones(nObjects,1));
-[curve] = createBezierCurve(path,v0,obst);
-[curve] = finishBezierCurve(path,obst,curve);
+[Q] = createBezierCurve(path,v0,obst);
+[curve] = finishBezierCurve(path,obst,Q);
 
-figure
-set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
-plotter(allComb, center, path, ptObject, curve, v0, nObjects)
+figure(1)
+%set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
+plotter(allComb, center, path, ptObject, curve, v0, nObjects, robotDiameter, fieldSize)
 axis([-fieldSize(1) fieldSize(1), -fieldSize(2) fieldSize(2)]*1.1/2)
 
 % do finishBezierCurve

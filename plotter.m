@@ -1,6 +1,9 @@
-function plotter(allComb, center, path, ptObject, curve, v0, nObjects)
+function plotter(allComb, center, path, ptObject, curve, v0, nObjects, objectRadius, fieldSize)
 % Plot all points and line segments for debugging purposes
 hold on
+%% Field
+rectangle('Position',[-fieldSize(1)/2, -fieldSize(2)/2, fieldSize(1), fieldSize(2)],'linewidth',5,'EdgeColor',[0 0.6 0],'FaceColor',[0 1 0 0.3]);
+
 %% Lines
 for i = 1:length(allComb(:,1))
     n1 = allComb(i,2);
@@ -17,20 +20,20 @@ quiver(center(end-1,2),center(end-1,3),v0.amp*cos(v0.theta),v0.amp*sin(v0.theta)
 
 %% Points
 plot(ptObject(:,1), ptObject(:,2),'xr');
-viscircles([ptObject(:,1) ptObject(:,2)], 9*ones(nObjects,1)); % 9 = robot radius
+viscircles([ptObject(:,1) ptObject(:,2)], objectRadius*ones(nObjects,1));
 plot(center(:,2),center(:,3),'.b','MarkerSize',15);
 plot(center(end-1,2),center(end-1,3),'.g','MarkerSize',25); % start
 plot(center(end,2),center(end,3),'.r','MarkerSize',25); % end
-for i = 1:4
-    if i == 4
-        x = [ptObject(i,1); ptObject(1,1)];
-        y = [ptObject(i,2); ptObject(1,2)];
-    else
-        x = [ptObject(i,1); ptObject(i+1,1)];
-        y = [ptObject(i,2); ptObject(i+1,2)];
-    end
-    plot(x,y,'color',[0.5 0.5 0.5],'linestyle','--');
-end
+% for i = 1:4
+%     if i == 4
+%         x = [ptObject(i,1); ptObject(1,1)];
+%         y = [ptObject(i,2); ptObject(1,2)];
+%     else
+%         x = [ptObject(i,1); ptObject(i+1,1)];
+%         y = [ptObject(i,2); ptObject(i+1,2)];
+%     end
+%     plot(x,y,'color',[0.5 0.5 0.5],'linestyle','--');
+% end
 axis equal
 grid on
 end

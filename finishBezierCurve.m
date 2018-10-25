@@ -1,4 +1,4 @@
-function [curve] = finishBezierCurve(path,obst,curve)
+function [curve] = finishBezierCurve(path,obst,Q)
 % Takes in a path with points and spits out a smooth curve passed these
 % points. This function assumes you already processed the first 3 points
 % -> obst:  list containing obstacles
@@ -8,29 +8,31 @@ function [curve] = finishBezierCurve(path,obst,curve)
 
 pts = path(:,2:3); % path points [X, Y]
 pos_margin = 0.5; % max distance to which to approach the end point
+curve = [];
 
 % If the path is not long enough, return
 if isempty(path) || length(path(:,1)) < 3
+    curve = points2Curve(Q);
     return;
 end
 
 % If the curve has already ended, return
-if norm(pts(end,:)-curve(:,end)') < pos_margin
+if norm(pts(end,:)-Q(end,:)) < pos_margin
     % Already at end
+    curve = points2Curve(Q);
     return;
 end
 
 % start at the third node
 % (set of control points now contains 2 points)
-ptStart = curve(:,end)'; % start of second part of curve
 
 % If the starting point is equal to one of the path nodes, add an
 % extrapolation of p1p2 for velocity continuity
-if norm(pts(3,:)-ptStart) < pos_margin
-    Q = [ptStart; pts(4,:)]; 
+if norm(pts(3,:)-Q(end,:)) < pos_margin
+    Q = [Q; pts(4,:)]; 
     pStartCount = 5;
 else
-    Q = [ptStart; pts(3,:)];
+    Q = [Q; pts(3,:)];
     pStartCount = 4;
 end
 
@@ -57,6 +59,12 @@ if length(pts(:,1)) >= pStartCount
                 p0PastObst = [p0ToObst(1:2) * [cos(ang), sin(ang); -sin(ang), cos(ang)], 0];
             end
             s = norm(cross(p0PastObst,p0p1Vec))/norm(cross(p1p2Vec,p0PastObst));
+            % limit s, should not be necessary?
+            if s > 1
+                s = 1;
+            elseif s < 0
+                s = 0;
+            end
             nextCP = Q(end,:) + s*p1p2Vec(1:2); % next control point is somewhere on p1p2
             Q = [Q; nextCP];
             

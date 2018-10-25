@@ -1,4 +1,4 @@
-function [curve,Q] = createBezierCurve(path,v0,obst)
+function [Q] = createBezierCurve(path,v0,obst)
 % Takes in a path with points and spits out a smooth curve passed these
 % points.
 % -> v0:    initial velocity struct (amp, theta)
@@ -7,7 +7,9 @@ function [curve,Q] = createBezierCurve(path,v0,obst)
 % TODO: What if the minimum curvature is still too high?
 
 if isempty(path) || length(path(:,1)) < 3
+    Q = path(:,2:3);
     disp('Please insert a path of at least 3 points.');
+    return;
 end
 
 Q = zeros(4,2); % control points
@@ -216,7 +218,6 @@ end
 if round(v0.amp) == 0 % TODO: should be limited, not rounded
     Q = [Q(1,:); Q(1,:); Q(2:end,:)];
 end
-curve = points2Curve(Q);
 
 
 %% FUNCTIONS
@@ -237,28 +238,6 @@ curve = points2Curve(Q);
         else
             bool = false;
         end
-    end
-
-    function [curve] = points2Curve(P)
-        % P: n by 2 matrix with control points (x, y)
-        dt = 0.01; % distance between two adjacent points
-        T = 0:dt:1;
-        X = zeros(1,length(T));
-        Y = zeros(1,length(T));
-        
-        if isempty(P)
-            disp('Please insert control points!');
-            return;
-        end
-        
-        n = length(P(:,1)) - 1; % degree of polynomial
-        
-        for i = 0:n
-            X = X + nchoosek(n,i) * T.^i .* (1-T).^(n-i) * P(i+1,1);
-            Y = Y + nchoosek(n,i) * T.^i .* (1-T).^(n-i) * P(i+1,2);
-        end
-        
-        curve = [X;Y];
     end
 
     function [ang] = angleOf(vec)
