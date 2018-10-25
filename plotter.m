@@ -21,6 +21,16 @@ viscircles([ptObject(:,1) ptObject(:,2)], 18*ones(nObjects,1));
 plot(center(:,2),center(:,3),'.b','MarkerSize',15);
 plot(center(end-1,2),center(end-1,3),'.g','MarkerSize',25); % start
 plot(center(end,2),center(end,3),'.r','MarkerSize',25); % end
+for i = 1:4
+    if i == 4
+        x = [ptObject(i,1); ptObject(1,1)];
+        y = [ptObject(i,2); ptObject(1,2)];
+    else
+        x = [ptObject(i,1); ptObject(i+1,1)];
+        y = [ptObject(i,2); ptObject(i+1,2)];
+    end
+    plot(x,y,'color',[0.5 0.5 0.5],'linestyle','--');
+end
 axis equal
 grid on
 end
