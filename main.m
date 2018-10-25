@@ -13,7 +13,7 @@ fieldSize = [1200, 900]; % field dimensions in cm
 fieldCoordinates = [fieldSize(1) fieldSize(2); ...
     -fieldSize(1) fieldSize(2); -fieldSize(1) -fieldSize(2); ...
     fieldSize(1) -fieldSize(2)]/2;
-startOrientationAngle=rand(1,1)*2*pi; % 0-2pi, uses this angle atm
+startOrientationAngle=rand(1,1)*2*pi; % 0-2pi
 v0 = struct('amp',100,'theta',startOrientationAngle);
 
 % Generate objects and start/end point (is received from world in real code)
@@ -58,17 +58,17 @@ ptObject(rowsToNotUse,:) = [];
 nObjects = nObjects - 2;
 
 obst = struct('x',ptObject(:,1),'y',ptObject(:,2),'radius',robotDiameter*ones(nObjects,1));
-[Q] = createBezierCurve(path,v0,obst);
+[Q] = createBezierCurve(path,v0,obst,startCP);
 [curve,movementData] = finishBezierCurve(path,obst,Q,getMovementData);
 
 %% Show result
 figure(1)
-%set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
+set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
 plotter(allComb, center, path, ptObject, curve, v0, nObjects, robotDiameter, fieldSize, ptStart, startOrientationAngle)
 axis([-fieldSize(1) fieldSize(1), -fieldSize(2) fieldSize(2)]*1.1/2)
 plot(startCP(1), startCP(2), 'm*')
 
-figure(2)
-showMovementData(movementData)
+% figure(2)
+% showMovementData(movementData)
 
 % do finishBezierCurve
