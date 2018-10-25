@@ -1,11 +1,10 @@
-function [Q] = createBezierCurve(path,v0,obst)
+function [Q] = createBezierCurve(path,v0,obst,max_q1)
 % Takes in a path with points and spits out a smooth curve passed these
 % points.
 % -> v0:    initial velocity struct (amp, theta)
 % -> obst:  list containing obstacles
 
 % TODO: What if the minimum curvature is still too high?
-
 if isempty(path) || length(path(:,1)) < 3
     Q = path(:,2:3);
     disp('Please insert a path of at least 3 points.');
@@ -55,11 +54,11 @@ if isempty(obstInPolygon.x)
         case 2
             % Determine maxes for parameters
             % max_q2 and max_q1 lay on the edges of the voronoi diagram
-            if round(v0.amp) == 0 % TODO: should be limited, not rounded
-                max_q1 = pts(1,:) + 10*v0UVec; % for orientation, constant could be used to control acceleration
-            else
-                max_q1 = pts(1,:) + v0.amp*v0UVec; % TODO: incorporate Voronoi
-            end
+%             if round(v0.amp) == 0 % TODO: should be limited, not rounded
+%                 max_q1 = pts(1,:) + 10*v0UVec; % for orientation, constant could be used to control acceleration
+%             else
+%                 max_q1 = pts(1,:) + v0.amp*v0UVec; % TODO: incorporate Voronoi
+%             end
             max_q2 = pts(2,:) - 2 * (pts(3,:)-pts(2,:))/norm(pts(3,:)-pts(2,:)); % TODO: incorporate Voronoi
             
             % max_q3 is computed such that p0p1max_q3 is the biggest triangle not
@@ -80,11 +79,11 @@ if isempty(obstInPolygon.x)
         case 3
             % Determine maxes for parameters
             % max_q1 lays on the edge of the voronoi diagram on the line p0 + t*v0
-            if round(v0.amp) == 0 % TODO: should be limited, not rounded
-                max_q1 = pts(1,:) + 10*v0UVec; % for orientation, constant could be used to control acceleration
-            else
-                max_q1 = pts(1,:) + 10 * v0UVec; % TODO: incorporate Voronoi
-            end
+%             if round(v0.amp) == 0 % TODO: should be limited, not rounded
+%                 max_q1 = pts(1,:) + 10*v0UVec; % for orientation, constant could be used to control acceleration
+%             else
+%                 max_q1 = pts(1,:) + 10 * v0UVec; % TODO: incorporate Voronoi
+%             end
             % max_q2 is equal to max_q3
             % max_q3 is computed such that max_q1p1max_q3 is the biggest triangle not
             %   intersecting an obstacle. No obstacles, so max_q3 = p2.
@@ -123,11 +122,11 @@ else
         case 2
             % Determine maxes for parameters
             % max_q2 and max_q1 lay on the edges of the voronoi diagram
-            if round(v0.amp) == 0 % TODO: should be limited, not rounded
-                max_q1 = pts(1,:) + 10*v0UVec; % for orientation, constant could be used to control acceleration
-            else
-                max_q1 = pts(1,:) + v0.amp*v0UVec; % TODO: incorporate Voronoi
-            end
+%             if round(v0.amp) == 0 % TODO: should be limited, not rounded
+%                 max_q1 = pts(1,:) + 10*v0UVec; % for orientation, constant could be used to control acceleration
+%             else
+%                 max_q1 = pts(1,:) + v0.amp*v0UVec; % TODO: incorporate Voronoi
+%             end
             max_q2 = pts(2,:) - 2 * (pts(3,:)-pts(2,:))/norm(pts(3,:)-pts(2,:)); % TODO: incorporate Voronoi
             
             % max_q3 is computed such that p0p1max_q3 is the biggest triangle not
@@ -157,11 +156,11 @@ else
         case 3
             % Determine maxes for parameters
             % max_q1 lays on the edge of the voronoi diagram on the line p0 + t*v0
-            if round(v0.amp) == 0 % TODO: should be limited, not rounded
-                max_q1 = pts(1,:) + 10*v0UVec; % for orientation, constant could be used to control acceleration
-            else
-                max_q1 = pts(1,:) + 10*v0UVec; % TODO: Voronoi
-            end
+%             if round(v0.amp) == 0 % TODO: should be limited, not rounded
+%                 max_q1 = pts(1,:) + 10*v0UVec; % for orientation, constant could be used to control acceleration
+%             else
+%                 max_q1 = pts(1,:) + 10*v0UVec; % TODO: Voronoi
+%             end
             % max_q2 is equal to max_q3
             % max_q3 is computed such that max_q1p1max_q3 is the biggest triangle not
             %   intersecting an obstacle.
