@@ -14,6 +14,7 @@ fieldCoordinates = [fieldSize(1) fieldSize(2); ...
     -fieldSize(1) fieldSize(2); -fieldSize(1) -fieldSize(2); ...
     fieldSize(1) -fieldSize(2)]/2;
 v0 = struct('amp',100,'theta',0.25*pi);
+startOrientationAngle=rand(1,1)*2*pi; % 0-2pi, uses this angle atm
 
 % Generate objects and start/end point (is received from world in real code)
 nObjects = 15; % used for testing stuff
@@ -32,7 +33,7 @@ ptObject(7:end,:) = ptObject(7:end,:).*m; % multiply so it's not only positive
 %  - Matrix with connected points in the Voronoi diagram
 %  - 6493 = start, 6494 = end
 %  - Change name function from voronoiPlanning to makeVoronoi
-[allComb, center] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, robotDiameter);
+[allComb, center, startCP] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, robotDiameter, startOrientationAngle);
 
 %%
 % Get shortest path
@@ -61,9 +62,10 @@ obst = struct('x',ptObject(:,1),'y',ptObject(:,2),'radius',robotDiameter*ones(nO
 [curve,movementData] = finishBezierCurve(path,obst,Q,getMovementData);
 
 figure(1)
-%set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
-plotter(allComb, center, path, ptObject, curve, v0, nObjects, robotDiameter, fieldSize)
+set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
+plotter(allComb, center, path, ptObject, curve, v0, nObjects, robotDiameter, fieldSize, ptStart, startOrientationAngle)
 axis([-fieldSize(1) fieldSize(1), -fieldSize(2) fieldSize(2)]*1.1/2)
+plot(startCP(1), startCP(2), 'm*')
 
 figure 
 showMovementData(movementData)

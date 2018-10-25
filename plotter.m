@@ -1,4 +1,4 @@
-function plotter(allComb, center, path, ptObject, curve, v0, nObjects, objectRadius, fieldSize)
+function plotter(allComb, center, path, ptObject, curve, v0, nObjects, objectRadius, fieldSize, ptStart, startOrientationAngle)
 % Plot all points and line segments for debugging purposes
 hold on
 %% Field
@@ -34,6 +34,12 @@ plot(center(end,2),center(end,3),'.r','MarkerSize',25); % end
 %     end
 %     plot(x,y,'color',[0.5 0.5 0.5],'linestyle','--');
 % end
+orientationMargin = 100;
+h = orientationMargin * sin(startOrientationAngle);
+l = orientationMargin * cos(startOrientationAngle);
+ptStartOrientation = [ptStart(1)+l, ptStart(2)+h];
+dp = ptStartOrientation - ptStart; 
+quiver(ptStart(1), ptStart(2), dp(1), dp(2),0,'MaxHeadSize',1);
 axis equal
 grid on
 end
