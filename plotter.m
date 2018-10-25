@@ -16,7 +16,7 @@ for i = 2:length(path(:,1))
     line([path(i,2), path(i-1,2)],[path(i,3), path(i-1,3)],'color','k','linestyle','--','linewidth',2)
 end
 plot(curve(1,:),curve(2,:),'-m','linewidth',2);
-quiver(center(end-1,2),center(end-1,3),v0.amp*cos(v0.theta),v0.amp*sin(v0.theta),'color','b','linewidth',3);
+%quiver(center(end-1,2),center(end-1,3),v0.amp*cos(v0.theta),v0.amp*sin(v0.theta),'color','b','linewidth',3);
 
 %% Points
 plot(ptObject(:,1), ptObject(:,2),'xr');

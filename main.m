@@ -13,8 +13,8 @@ fieldSize = [1200, 900]; % field dimensions in cm
 fieldCoordinates = [fieldSize(1) fieldSize(2); ...
     -fieldSize(1) fieldSize(2); -fieldSize(1) -fieldSize(2); ...
     fieldSize(1) -fieldSize(2)]/2;
-v0 = struct('amp',100,'theta',0.25*pi);
 startOrientationAngle=rand(1,1)*2*pi; % 0-2pi, uses this angle atm
+v0 = struct('amp',100,'theta',startOrientationAngle);
 
 % Generate objects and start/end point (is received from world in real code)
 nObjects = 15; % used for testing stuff
@@ -35,8 +35,7 @@ ptObject(7:end,:) = ptObject(7:end,:).*m; % multiply so it's not only positive
 %  - Change name function from voronoiPlanning to makeVoronoi
 [allComb, center, startCP] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, robotDiameter, startOrientationAngle);
 
-%%
-% Get shortest path
+%% Get shortest path
 %  - Matrix (numberPathNodes-by-3) path = [ID, x, y]
 %   (this includes the start and end nodes)
 if isempty(find(allComb(:,2)==6493,1)) || isempty(find(allComb(:,2)==6494,1))
@@ -46,6 +45,7 @@ else
     [path] = findShortestPath(center, allComb, center(end-1,1), center(end,1));
 end
 
+%% Create Bezier Curve
 % Take the first 3 nodes from path and create first path of Bezier Curve
 %   (the end node of this first path will be somewhere on the edge between
 %    the second and third node)
@@ -61,13 +61,14 @@ obst = struct('x',ptObject(:,1),'y',ptObject(:,2),'radius',robotDiameter*ones(nO
 [Q] = createBezierCurve(path,v0,obst);
 [curve,movementData] = finishBezierCurve(path,obst,Q,getMovementData);
 
+%% Show result
 figure(1)
-set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
+%set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
 plotter(allComb, center, path, ptObject, curve, v0, nObjects, robotDiameter, fieldSize, ptStart, startOrientationAngle)
 axis([-fieldSize(1) fieldSize(1), -fieldSize(2) fieldSize(2)]*1.1/2)
 plot(startCP(1), startCP(2), 'm*')
 
-figure 
+figure(2)
 showMovementData(movementData)
 
 % do finishBezierCurve
