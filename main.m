@@ -1,5 +1,6 @@
-clear all; clf; clc;
+clear all; close all; clc;
 % MAIN CODE (pseudo style)
+getMovementData = true; % if true, get the velocity, acceleration and rotation of the path
 
 % Get information from world_state
 % This is not possible now so everything is defined/generated
@@ -57,11 +58,14 @@ nObjects = nObjects - 2;
 
 obst = struct('x',ptObject(:,1),'y',ptObject(:,2),'radius',robotDiameter*ones(nObjects,1));
 [Q] = createBezierCurve(path,v0,obst);
-[curve] = finishBezierCurve(path,obst,Q);
+[curve,movementData] = finishBezierCurve(path,obst,Q,getMovementData);
 
 figure(1)
 %set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
 plotter(allComb, center, path, ptObject, curve, v0, nObjects, robotDiameter, fieldSize)
 axis([-fieldSize(1) fieldSize(1), -fieldSize(2) fieldSize(2)]*1.1/2)
+
+figure 
+showMovementData(movementData)
 
 % do finishBezierCurve
