@@ -30,17 +30,19 @@ end
 if norm(pts(end,:)-Q(end,:)) < pos_margin
     % Already at end
     curve = points2Curve(Q);
-    movementData.Vel = getVelocity(Q,dT);
-    movementData.Acc = getAcceleration(Q,dT);
-    movementData.Ang = getRotation(movementData.Vel);
+    if getMovementData
+        movementData.Vel = getVelocity(Q,dT);
+        movementData.Acc = getAcceleration(Q,dT);
+        movementData.Ang = getRotation(movementData.Vel);
+    end
     return;
 end
 
 % start at the third node
 % (set of control points now contains 2 points)
 
-% If the starting point is equal to one of the path nodes, add an
-% extrapolation of p1p2 for velocity continuity
+% If you are at one of the path points, add the next path point.
+% Otherwise, add the path point you still need to reach.
 if norm(pts(3,:)-Q(end,:)) < pos_margin
     Q = [Q; pts(4,:)];
     pStartCount = 5;
@@ -49,6 +51,7 @@ else
     pStartCount = 4;
 end
 
+curveNum = 1;
 if length(pts(:,1)) >= pStartCount
     for pCount = pStartCount:length(pts(:,1))
         obstInPolygon = findObstaclesInPolygon([Q; pts(pCount,:)],obst);
@@ -81,34 +84,37 @@ if length(pts(:,1)) >= pStartCount
             nextCP = Q(end,:) + s*p1p2Vec(1:2); % next control point is somewhere on p1p2
             Q = [Q; nextCP];
             
-            % make bezier curve and add it to the total curve
-            tempCurve = points2Curve(Q);
-            curve = [curve, tempCurve];
-            V = getVelocity(Q,dT);
-            movementData.Vel = [movementData.Vel, V];
-            movementData.Acc = [movementData.Acc, getAcceleration(Q,dT)];
-            movementData.Ang = [movementData.Ang, getRotation(V)];
+            % save control points of current curve and start with new curve
+            saveQ{curveNum} = Q;
+            curveNum = curveNum + 1;
             
             % empty set of control points
-            % add last point of previous curve
-            a = 20; % parameter that needs optimizing
-            % Maybe add a maximum
-            cPoint = Q(end,:) + a*(Q(end,:) - Q(end-1,:))/norm(Q(end,:) - Q(end-1,:)); % point for continuity
-            Q = [curve(:,end)'; cPoint ; pts(pCount,:)];
+            % add last point of previous curve and next path point
+            Q = [Q(end,:); pts(pCount,:)]; % reset Q
         end
     end
 end
+saveQ{curveNum} = Q;
 
-% Add last part to curve
-if ~isempty(Q)
-    tempCurve = points2Curve(Q);
-    curve = [curve, tempCurve];
-    V = getVelocity(Q,dT);
-    movementData.Vel = [movementData.Vel, V];
-    movementData.Acc = [movementData.Acc, getAcceleration(Q,dT)];
-    movementData.Ang = [movementData.Ang, getRotation(V)];
+% Combine all control points into one curve.
+if curveNum > 1
+    totalQ = [];
+    for it = 1:curveNum-1
+        totalQ = [totalQ; combineCurves(saveQ{it},saveQ{it+1})];
+    end
+else
+    totalQ = Q;
 end
 
+% Make curve
+curve = points2Curve(totalQ);
+
+% Get movement data
+if getMovementData
+    movementData.Vel = getVelocity(totalQ,dT);
+    movementData.Acc = getAcceleration(totalQ,dT);
+    movementData.Ang = getRotation(movementData.Vel);
+end
 
 %% FUNCTIONS
     function [curve] = points2Curve(P)
@@ -296,5 +302,20 @@ end
         % Fix NaN data by extrapolation
         ang(1) = ang(2) - (ang(3)-ang(2));
         ang(end) = ang(end-1) + (ang(end-2)-ang(end-3));
+    end
+
+    function [Q] = combineCurves(Q1,Q2)
+        n1 = length(Q1(:,1));
+        n2 = length(Q2(:,1));
+        a = n1/n2;
+        b = (n1-1)/(n2-1);
+        
+        P0 = Q1(end,:); % common point
+        Pmin2 = Q1(end-1,:);
+        P2 = Q2(2,:);
+        Pmin1 = (1+1/(2*a)+b/2)/(1+b)*P0 + b/(2+2*b)*Pmin2 - 1/(2*a+2*a*b)*P2; % first continuity point
+        P1 = (1+a)*P0 - a*Pmin1;
+        
+        Q = [Q1(1:end-1,:); Pmin1; P0; P1; Q2(2:end,:)];
     end
 end
