@@ -1,4 +1,4 @@
-function [allComb, center] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, robotDiameter)
+function [allComb, center, startOrientationCP] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, robotDiameter)
 % Generates a Voronoi diagram
 %
 % INPUTS
@@ -49,7 +49,8 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
 
 %% Determine orientation control point(s)
 % Calculate angles between start point and connected centers
-[angle] = getAngles(ptStart, allComb, center, nCombinations);
+[angleStart] = getAngles(ptStart, allComb, center, nCombinations);
+[startOrientationCP] = getOrientationCP(angleStart, startOrientationAngle, center, ptStart);
 
 %% Functions
     function [center, radius] = createCircumcircles(combs, ptObject, nCombinations)
@@ -271,6 +272,41 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
             end
             p = p + 1;
         end
+    end     
     end
+
+    function [orientationCP] = getOrientationCP(angle, oAngle, center, pt)
+    greaterAngle = [];
+    smallerAngle = [];
+    p = 1; q = 1;
+        for i = 1:length(angle)
+            if angle(i) >= oAngle
+                greaterAngle(p,:) = [i, angle(i)];
+                p = p + 1;
+            else
+                smallerAngle(q,:) = [i, angle(i)];
+                q = q + 1;
+            end
+            if isempty(greaterAngle)
+                [value, index] = min(angle);
+                greaterAngle = [index value];
+            end
+        end
+    angleDifGreater = abs(greaterAngle(:,2) - oAngle); 
+    angleDifSmaller = abs(smallerAngle(:,2) - oAngle);
+    [~, indexGreater] = min(angleDifGreater);
+    [~, indexSmaller] = min(angleDifSmaller); 
+    adjacentAngle = [greaterAngle(indexGreater,:); smallerAngle(indexSmaller,:)];
+
+    linePoints = [center(adjacentAngle(1,1),2) center(adjacentAngle(1,1),3); ...
+    center(adjacentAngle(2,1),2) center(adjacentAngle(2,1),3)];
+    
+    a = (linePoints(1,2)-linePoints(2,2))/(linePoints(1,1)-linePoints(2,1));
+    b = linePoints(1,2) - a * linePoints(1,1);
+    c = (pt(2) - ptStartOrientation(2))/(pt(1) - ptStartOrientation(1));
+    d = pt(2) - c * pt(1);
+    x = (d-b)/(a-c);
+    y = a * x + b;
+    orientationCP = [x y];
     end
 end
