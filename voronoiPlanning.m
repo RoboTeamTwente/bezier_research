@@ -1,4 +1,4 @@
-function [allComb, center, startOrientationCP] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, robotDiameter, startOrientationAngle)
+function [allComb, center, orientationCP] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, robotDiameter, startOrientationAngle)
 % Generates a Voronoi diagram
 %
 % INPUTS
@@ -50,7 +50,7 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
 %% Determine orientation control point(s)
 % Calculate angles between start point and connected centers
 [angleStart] = getAngles(ptStart, allComb, center, nCombinations);
-[startOrientationCP] = getOrientationCP(angleStart, startOrientationAngle, center, ptStart);
+[orientationCP,greaterAngle,smallerAngle,adjacentAngle,x,y] = getOrientationCP(angleStart, startOrientationAngle, center, ptStart);
 
 %% Functions
     function [center, radius] = createCircumcircles(combs, ptObject, nCombinations)
@@ -270,12 +270,15 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
             if x <= ptStart(1) % add pi for these angles 
                 angle(p) = angle(p) + pi;
             end
+            if angle(p) < 0
+                angle(p) = angle(p) + 2*pi;
+            end
             p = p + 1;
         end
     end     
     end
 
-    function [orientationCP] = getOrientationCP(angle, oAngle, center, pt)
+    function [orientationCP,greaterAngle,smallerAngle,adjacentAngle,x,y] = getOrientationCP(angle, oAngle, center, pt)
     greaterAngle = [];
     smallerAngle = [];
     p = 1; q = 1;
