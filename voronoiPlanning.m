@@ -253,9 +253,9 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
 %                 end
 %             end
 %         end
-    end
-    ptObject = ptObject(any(ptObject,2),:);  
-    end
+%     end
+%     ptObject = ptObject(any(ptObject,2),:); 
+%     end
 
     function [angle] = getAngles(ptStart, allComb, center, nCombinations)
     angle = [];
