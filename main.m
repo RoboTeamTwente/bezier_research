@@ -61,7 +61,7 @@ obst = struct('x',ptObject(:,1),'y',ptObject(:,2),'radius',robotDiameter*ones(nO
 
 figure(1)
 %set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
-plotter(allComb, center, path, ptObject, curve, v0, nObjects)
+plotter(allComb, center, path, ptObject, curve, v0, nObjects, robotDiameter, fieldSize)
 axis([-fieldSize(1) fieldSize(1), -fieldSize(2) fieldSize(2)]*1.1/2)
 
 % do finishBezierCurve
