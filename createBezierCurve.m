@@ -66,7 +66,7 @@ if isempty(obstInPolygon.x)
             max_q3 = pts(3,:);
             
             % Determine parameters by minimizing curvature
-            a = 0.5; % q1-parameter; interval [0,1]
+            a = 1; % q1-parameter; interval [0,1]
             b = 0.5; % q2-parameter; interval [0,1]
             c = 0.5; % q3-parameter; interval [0,1]
             
@@ -91,7 +91,7 @@ if isempty(obstInPolygon.x)
             max_q2 = max_q3;
             
             % Determine parameters by minimizing curvature
-            a = 0.5; % q1-parameter; interval [0,1]
+            a = 1; % q1-parameter; interval [0,1]
             b = 0.2; % q2-parameter; interval [0,1]
             c = 0.8; % q3-parameter; interval [0,1]
             
@@ -143,7 +143,7 @@ else
             max_q3 = pts(2,:) + s*(pts(3,:)-pts(2,:));
             
             % Determine parameters by minimizing curvature
-            a = 0.5; % q1-parameter; interval [0,1]
+            a = 1; % q1-parameter; interval [0,1]
             b = 0.5; % q2-parameter; interval [0,1]
             c = 0.5; % q3-parameter; interval [0,1]
             
@@ -177,7 +177,7 @@ else
             max_q2 = max_q3;
             
             % Determine parameters by minimizing curvature
-            a = 0.5; % q1-parameter; interval [0,1]
+            a = 1; % q1-parameter; interval [0,1]
             b = 0.2; % q2-parameter; interval [0,1]
             c = 0.8; % q3-parameter; interval [0,1]
             

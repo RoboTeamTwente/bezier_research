@@ -1,4 +1,4 @@
-function [curve,movementData] = finishBezierCurve(path,obst,Q,getMovementData,v0)
+function [curve,movementData] = finishBezierCurve(path,obst,Q,getMovementData)
 % Takes in a path with points and spits out a smooth curve passed these
 % points. This function assumes you already processed the first 3 points
 % -> obst:  list containing obstacles
@@ -55,7 +55,7 @@ curveNum = 1;
 nControlPoints = 0;
 if length(pts(:,1)) >= pStartCount
     for pCount = pStartCount:length(pts(:,1))
-        obstInPolygon = findObstaclesInPolygon([Q; pts(pCount,:)],obst);
+        obstInPolygon = findObstaclesInPolygon([Q(end-1:end,:); pts(pCount,:)],obst);
         if isempty(obstInPolygon.x)% convex including next node does not contain any obstacle
             Q = [Q; pts(pCount,:)];% add node to set of control points
         else
@@ -101,18 +101,12 @@ nControlPoints = nControlPoints + length(Q(:,1)) - curveNum + 1; % don't count p
 
 % Combine all control points into one curve.
 if curveNum > 1
-    % Change second control point to match initial velocity
-    tempQ = saveQ{1};
-    tempQ(2,:) = tempQ(1,:) + v0.amp/(nControlPoints-1) * (tempQ(2,:)-tempQ(1,:))/norm(tempQ(2,:)-tempQ(1,:));
-    saveQ{1} = tempQ;
-    
     % Combine curves
     totalQ = [];
     for it = 1:curveNum-1
         totalQ = [totalQ; combineCurves(saveQ{it},saveQ{it+1})];
     end
 else
-    Q(2,:) = Q(1,:) + v0.amp/(nControlPoints-1) * (Q(2,:)-Q(1,:))/norm(Q(2,:)-Q(1,:));
     totalQ = Q;
 end
 
