@@ -13,7 +13,8 @@ fieldSize = [1200, 900]; % field dimensions in cm
 fieldCoordinates = [fieldSize(1) fieldSize(2); ...
     -fieldSize(1) fieldSize(2); -fieldSize(1) -fieldSize(2); ...
     fieldSize(1) -fieldSize(2)]/2;
-startOrientationAngle=rand(1,1)*2*pi; % 0-2pi
+startOrientationAngle = rand(1,1)*2*pi; % 0-2pi
+endOrientationAngle = rand(1,1)*2*pi;
 v0 = struct('amp',100,'theta',startOrientationAngle);
 
 % Generate objects and start/end point (is received from world in real code)
@@ -33,7 +34,7 @@ ptObject(7:end,:) = ptObject(7:end,:).*m; % multiply so it's not only positive
 %  - Matrix with connected points in the Voronoi diagram
 %  - 6493 = start, 6494 = end
 %  - Change name function from voronoiPlanning to makeVoronoi
-[allComb, center, startCP] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, robotDiameter, startOrientationAngle);
+[allComb, center, startCP, endCP] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, robotDiameter, startOrientationAngle, endOrientationAngle);
 
 %% Get shortest path
 %  - Matrix (numberPathNodes-by-3) path = [ID, x, y]
@@ -64,9 +65,10 @@ obst = struct('x',ptObject(:,1),'y',ptObject(:,2),'radius',robotDiameter*ones(nO
 %% Show result
 figure(1)
 set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
-plotter(allComb, center, path, ptObject, curve, v0, nObjects, robotDiameter, fieldSize, ptStart, startOrientationAngle)
+plotter(allComb, center, path, ptObject, curve, v0, nObjects, robotDiameter, fieldSize, ptStart, startOrientationAngle, endOrientationAngle, ptEnd)
 axis([-fieldSize(1) fieldSize(1), -fieldSize(2) fieldSize(2)]*1.1/2)
 plot(startCP(1), startCP(2), 'm*')
+plot(endCP(1), endCP(2),'m*')
 
 % figure(2)
 % showMovementData(movementData)

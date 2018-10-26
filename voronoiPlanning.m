@@ -1,4 +1,4 @@
-function [allComb, center, orientationCP] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, robotDiameter, startOrientationAngle)
+function [allComb, center, startOrientationCP, endOrientationCP] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, robotDiameter, startOrientationAngle, endOrientationAngle)
 % Generates a Voronoi diagram
 %
 % INPUTS
@@ -49,8 +49,10 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
 
 %% Determine orientation control point(s)
 % Calculate angles between start point and connected centers
-[angleStart] = getAngles(ptStart, allComb, center, nCombinations);
-[orientationCP,greaterAngle,smallerAngle,adjacentAngle,x,y] = getOrientationCP(angleStart, startOrientationAngle, center, ptStart);
+[angleStart] = getAngles(1, ptStart, allComb, center, nCombinations);
+[startOrientationCP] = getOrientationCP(angleStart, startOrientationAngle, center, ptStart);
+[angleEnd] = getAngles(2, ptEnd, allComb, center, nCombinations);
+[endOrientationCP, linePoints, adjacentAngle] = getOrientationCP(angleEnd, endOrientationAngle, center, ptEnd);
 
 %% Functions
     function [center, radius] = createCircumcircles(combs, ptObject, nCombinations)
@@ -83,11 +85,11 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
         end
     end
 
-    function area = shoelace(corners) % shoelace formula
-        area = 0.5*(corners(1,1) * corners(2,2) + corners(2,1) * corners(3,2) + ...
-            corners(3,1) * corners(1,2) - corners(2,1) * corners(1,2) - ...
-            corners(3,1) * corners(2,2) - corners(1,1) * corners(3,2));
-    end
+%     function area = shoelace(corners) % shoelace formula
+%         area = 0.5*(corners(1,1) * corners(2,2) + corners(2,1) * corners(3,2) + ...
+%             corners(3,1) * corners(1,2) - corners(2,1) * corners(1,2) - ...
+%             corners(3,1) * corners(2,2) - corners(1,1) * corners(3,2));
+%     end
 
     function [a, b, c] = lineFromPoints(A, B)
         a = B(1,2) - A(1,2);
@@ -148,41 +150,41 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
     combs = combs(any(combs,2),:);
     end
 
-    function [cx, cy, nLines] = makeLines(nCombinations, adjacentTriangles, validCenter, radiusx, radiusy)
-    cx = [];
-    cy = [];
-    p = 1;
-    for i = 1:nCombinations
-        for k = 2:4
-            if adjacentTriangles(i,k) ~= 0
-                cx(1:2,p) = [validCenter(adjacentTriangles(i,1),1); validCenter(adjacentTriangles(i,k),1)];
-                cy(1:2,p) = [validCenter(adjacentTriangles(i,1),2); validCenter(adjacentTriangles(i,k),2)];
-                p = p + 1;
-            end
-        end
-    end
-    [~,n] = size(radiusx);
-    for i = 1:n
-        cx(1:2,p) = radiusx(1:2,i);
-        cy(1:2,p) = radiusy(1:2,i);
-        p = p + 1;
-    end
-
-    [~,nLines] = size(cx);
-    for i = 1:nLines
-        for k = 1:nLines
-            if k ~= i 
-                if (cx(1,k) == cx(1,i)) && (cx(2,k) == cx(2,i)) || (cx(1,k) ...
-                        == cx(2,i) && cx(2,k) == cx(1,i))
-                    cx(:,k) = [0 0];
-                    cy(:,k) = [0 0];
-                end
-            end
-        end
-    end
-    cx(:,~any(cx,1)) = [];
-    cy(:,~any(cy,1)) = [];
-    end
+%     function [cx, cy, nLines] = makeLines(nCombinations, adjacentTriangles, validCenter, radiusx, radiusy)
+%     cx = [];
+%     cy = [];
+%     p = 1;
+%     for i = 1:nCombinations
+%         for k = 2:4
+%             if adjacentTriangles(i,k) ~= 0
+%                 cx(1:2,p) = [validCenter(adjacentTriangles(i,1),1); validCenter(adjacentTriangles(i,k),1)];
+%                 cy(1:2,p) = [validCenter(adjacentTriangles(i,1),2); validCenter(adjacentTriangles(i,k),2)];
+%                 p = p + 1;
+%             end
+%         end
+%     end
+%     [~,n] = size(radiusx);
+%     for i = 1:n
+%         cx(1:2,p) = radiusx(1:2,i);
+%         cy(1:2,p) = radiusy(1:2,i);
+%         p = p + 1;
+%     end
+% 
+%     [~,nLines] = size(cx);
+%     for i = 1:nLines
+%         for k = 1:nLines
+%             if k ~= i 
+%                 if (cx(1,k) == cx(1,i)) && (cx(2,k) == cx(2,i)) || (cx(1,k) ...
+%                         == cx(2,i) && cx(2,k) == cx(1,i))
+%                     cx(:,k) = [0 0];
+%                     cy(:,k) = [0 0];
+%                 end
+%             end
+%         end
+%     end
+%     cx(:,~any(cx,1)) = [];
+%     cy(:,~any(cy,1)) = [];
+%     end
 
     function adjacentCenter = findAdjacentCenter(nCombinations, validCombinations)
     newCombinations = ones(nCombinations, 4);
@@ -191,7 +193,7 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
     end
 
     adjacentTriangles = zeros(nCombinations,4);
-    adjacentTriangles(:,1) = [1:nCombinations];
+    adjacentTriangles(:,1) = 1:nCombinations;
     for i = 1:nCombinations
         p = 2;
         for k = 1:3
@@ -258,45 +260,61 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
 %     ptObject = ptObject(any(ptObject,2),:); 
 %     end
 
-    function [angle] = getAngles(ptStart, allComb, center, nCombinations)
-    angle = [];
+    function [angles] = getAngles(inp, pt, allComb, center, nCombinations)
+    angles = [];
     p = 1;
     for i = 1:nCombinations
-        if allComb(i,2) == 6493
-            index = allComb(i,3);
-            x = center(index,2);
-            y = center(index,3);
-            angle(p) = atan((y-ptStart(2))/(x-ptStart(1)));
-            if x <= ptStart(1) % add pi for these angles 
-                angle(p) = angle(p) + pi;
+        if inp == 1 % 1 for start, else for end
+            if allComb(i,2) == 6493
+                index = allComb(i,3);
+                x = center(index,2);
+                y = center(index,3);
+                angles(p,:) = [atan((y-pt(2))/(x-pt(1))) index];
+                if x <= pt(1) % add pi for these angles 
+                    angles(p,1) = angles(p,1) + pi;
+                end
+                if angles(p,1) < 0
+                    angles(p,1) = angles(p,1) + 2*pi;
+                end
+                p = p + 1;
             end
-            if angle(p) < 0
-                angle(p) = angle(p) + 2*pi;
+        else
+            if allComb(i,2) == 6494
+                index = allComb(i,3);
+                x = center(index,2);
+                y = center(index,3);
+                angles(p,:) = [atan((y-pt(2))/(x-pt(1))) index];
+                if x <= pt(1) % add pi for these angles 
+                    angles(p,1) = angles(p,1) + pi;
+                end
+                if angles(p,1) < 0
+                    angles(p,1) = angles(p,1) + 2*pi;
+                end
+                p = p + 1;
             end
-            p = p + 1;
         end
     end     
     end
 
-    function [orientationCP,greaterAngle,smallerAngle,adjacentAngle,x,y] = getOrientationCP(angle, oAngle, center, pt)
+    function [orientationCP, linePoints, adjacentAngle] = getOrientationCP(angles, oAngle, center, pt)
     greaterAngle = [];
     smallerAngle = [];
     p = 1; q = 1;
-        for i = 1:length(angle)
-            if angle(i) >= oAngle
-                greaterAngle(p,:) = [i, angle(i)];
+        for i = 1:length(angles(:,1))
+            if angles(i,1) >= oAngle
+                greaterAngle(p,:) = [angles(i,2), angles(i,1)];
                 p = p + 1;
             else
-                smallerAngle(q,:) = [i, angle(i)];
+                smallerAngle(q,:) = [angles(i,2), angles(i,1)];
                 q = q + 1;
             end
             if isempty(greaterAngle)
-                [value, index] = min(angle);
-                greaterAngle = [index value];
+                [value, index] = min(angles(:,1));
+                greaterAngle = [angles(index,2) value];
             end
             if isempty(smallerAngle)
-                [value, index] = max(angle);
-                smallerAngle = [index value];
+                [value, index] = max(angles(:,1));
+                smallerAngle = [angles(index,2) value];
             end
         end
     angleDifGreater = abs(greaterAngle(:,2) - oAngle); 
@@ -311,11 +329,11 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
     orientationMargin = 100;
     h = orientationMargin * sin(oAngle);
     l = orientationMargin * cos(oAngle);
-    ptStartOrientation = [pt(1)+l, pt(2)+h];
+    ptOrientation = [pt(1)+l, pt(2)+h];
     
     a = (linePoints(1,2)-linePoints(2,2))/(linePoints(1,1)-linePoints(2,1));
     b = linePoints(1,2) - a * linePoints(1,1);
-    c = (pt(2) - ptStartOrientation(2))/(pt(1) - ptStartOrientation(1));
+    c = (pt(2) - ptOrientation(2))/(pt(1) - ptOrientation(1));
     d = pt(2) - c * pt(1);
     x = (d-b)/(a-c);
     y = a * x + b;
