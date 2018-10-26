@@ -1,4 +1,4 @@
-function [path] = findShortestPath(nodesIN, segments, startID, endID, v0, vf) 
+function [path] = findShortestPath(nodesIN, segments, startID, endID, node_weights)
 % findShortestPath  Find the shortest path through a set of connected points.
 %    > nodesIN:    list of nodes [(int)ID, (float)x, (float)y].
 %    > segments:   list of segments [(int)ID, (float)x, (float)y].
@@ -13,8 +13,8 @@ for i = 1:numNodes
     j = nodesIN(i,1); % ID of node
     ind = nodesIN(:,1) == j;
     dist_to_end = sqrt((nodesIN(i,2)-nodesIN(endInd,2))^2 + ((nodesIN(i,3)-nodesIN(endInd,3))^2)); % euclidean distance to end node
-    nodes(j) = struct('ID',j,'x',nodesIN(ind,2),'y',nodesIN(ind,3),'via',NaN,'dist_start',inf,'dist_end',dist_to_end,'visited',false);
-
+    nodes(j) = struct('ID',j,'x',nodesIN(ind,2),'y',nodesIN(ind,3),'via',NaN,'dist_start',inf,'dist_end',dist_to_end,'visited',false,'weight',node_weights(ind));
+    
     if nodes(j).ID == startID
         % visit start node
         nodes(j).dist_start = 0;
@@ -34,48 +34,36 @@ while queue(1) ~= endID % while the end node is not on top of the queue
     for i = 1:length(children)
         childID = children(i); % ID of node on the other side of the segment
         if ~nodes(childID).visited
-        dist_to_start = nodes(parentID).dist_start + sqrt((nodes(parentID).x - nodes(childID).x)^2 + (nodes(parentID).y - nodes(childID).y)^2);
-        %cost = dist_to_start + nodes(childID).dist_end;
-        
-        % Update node info
-        nodes(childID).dist_start = dist_to_start;
-        nodes(childID).via = parentID;
-
-        % Update queue
-        if isempty(queue)
-            queue = childID;
-        else 
-            % place childID at the correct place in the queue
-            for j = 1:length(queue)
-                % Calculate cost
-                childDirectionCost = 1;
-                queueNodeDirectionCost = 1;
-                if parentID == startID
-                    % Take into account v0 at the starting node
-                    startToChildNode = [nodes(childID).x, nodes(childID).y] - [nodes(startID).x, nodes(startID).y];
-                    startToQueueNode = [nodes(queue(j)).x, nodes(queue(j)).y] - [nodes(startID).x, nodes(startID).y];
-                    angleToChildNode = v0.theta-atan2(startToChildNode(2),startToChildNode(1));
-                    angleToQueueNode = v0.theta-atan2(startToQueueNode(2),startToQueueNode(1));
-                    childDirectionCost = sin(angleToChildNode/2)^2; % if angle is 0, result is 0. if angle is pi, result is 1
-                    queueNodeDirectionCost = sin(angleToQueueNode/2)^2; % if angle is 0, result is 0. if angle is pi, result is 1
-                end
+            dist_to_start = nodes(parentID).dist_start + sqrt((nodes(parentID).x - nodes(childID).x)^2 + (nodes(parentID).y - nodes(childID).y)^2);
+            %cost = dist_to_start + nodes(childID).dist_end;
+            
+            % Update node info
+            nodes(childID).dist_start = dist_to_start;
+            nodes(childID).via = parentID;
+            
+            % Update queue
+            if isempty(queue)
+                queue = childID;
+            else
+                % place childID at the correct place in the queue
+                for j = 1:length(queue)
+                    % Calculate cost                 
+                    childCost = (nodes(childID).dist_start + nodes(childID).dist_end) * nodes(childID).weight;
+                    queueNodeCost = (nodes(queue(j)).dist_start + nodes(queue(j)).dist_end) * nodes(queue(j)).weight;
                     
-                childCost = (nodes(childID).dist_start + nodes(childID).dist_end) * childDirectionCost;
-                queueNodeCost = (nodes(queue(j)).dist_start + nodes(queue(j)).dist_end) * queueNodeDirectionCost;
-                
-                if childCost < queueNodeCost
-                    if j == 1
-                        queue = [childID, queue];
-                    else
-                        queue = [queue(1:j-1), childID, queue(j:end)];
+                    if childCost < queueNodeCost
+                        if j == 1
+                            queue = [childID, queue];
+                        else
+                            queue = [queue(1:j-1), childID, queue(j:end)];
+                        end
+                        break;
+                    elseif j == length(queue)
+                        queue = [queue, childID];
+                        break;
                     end
-                    break;
-                elseif j == length(queue)
-                    queue = [queue, childID];
-                    break;
                 end
             end
-        end
         end
     end
     
