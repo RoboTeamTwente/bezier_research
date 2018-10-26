@@ -19,7 +19,7 @@ v0 = struct('amp',100,'theta',startOrientationAngle);
 
 % Coordinates so the robot won't go out of the field
 safetyMargin = 100;
-nStep = 10;
+nStep = 5;
 xL = (-fieldSize(1)/2)*ones(nStep+1,1)-safetyMargin;
 xR = (fieldSize(1)/2)*ones(nStep+1,1)+safetyMargin;
 xT = -fieldSize(1)/2:fieldSize(1)/nStep:fieldSize(1)/2;
@@ -74,7 +74,7 @@ nObjects = nObjects - 2;
 
 obst = struct('x',ptObject(:,1),'y',ptObject(:,2),'radius',robotDiameter*ones(nObjects,1));
 [Q] = createBezierCurve(path,v0,obst,startCP);
-[curve,movementData] = finishBezierCurve(path,obst,Q,getMovementData);
+[curve,movementData] = finishBezierCurve(path,obst,Q,getMovementData,v0);
 
 %% Show result
 figure(1)
