@@ -12,6 +12,7 @@ robotDiameter = 2*9 + 5; % robot diameter in cm
 startOrientationAngle = rand(1,1)*2*pi; % 0-2pi
 endOrientationAngle = rand(1,1)*2*pi;
 v0 = struct('amp',100,'theta',startOrientationAngle);
+vf = struct('amp',100,'theta',endOrientationAngle);
 
 % Field dimensions
 fieldSize = [1200, 900]; % field dimensions in cm
@@ -58,6 +59,10 @@ ptObject((2+length(safetyCoordinates)+1):end,:) = ptObject((2+length(safetyCoord
 %  - Change name function from voronoiPlanning to makeVoronoi
 [allComb, center, startCP, endCP] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, robotDiameter, startOrientationAngle, endOrientationAngle, fieldCoordinates, penaltyCoordinates);
 
+%% Add weights to Voronoi points
+%  - 6493 = start, 6494 = end
+[center_weights] = calcWeights(allComb, center, v0, vf);
+
 %% Get shortest path
 %  - Matrix (numberPathNodes-by-3) path = [ID, x, y]
 %   (this includes the start and end nodes)
@@ -65,7 +70,7 @@ if isempty(find(allComb(:,2)==6493,1)) || isempty(find(allComb(:,2)==6494,1))
     disp('No connections to start and/or end point...');
     path = [6493, ptStart; 6494, ptEnd];
 else
-    [path] = findShortestPath(center, allComb, center(end-1,1), center(end,1));
+    [path] = findShortestPath(center, allComb, center(end-1,1), center(end,1),center_weights);
 end
 
 %% Create Bezier Curve
@@ -86,7 +91,7 @@ obst = struct('x',ptObject(:,1),'y',ptObject(:,2),'radius',robotDiameter*ones(nO
 
 %% Show result
 figure(1)
-set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
+%set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
 plotter(allComb, center, path, ptObject, curve, v0, nObjects, robotDiameter, fieldSize, ptStart, startOrientationAngle, endOrientationAngle, ptEnd)
 axis([-fieldSize(1) fieldSize(1), -fieldSize(2) fieldSize(2)]*0.7)
 plot(startCP(1), startCP(2), 'm*')
