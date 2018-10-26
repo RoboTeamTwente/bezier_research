@@ -8,7 +8,7 @@ getMovementData = true; % if true, get the velocity, acceleration and rotation o
 %  - Current robot position and velocity
 %  - Field size [x, y]
 %  - Size of robot
-robotDiameter = 2*9 + 5; % robot radius in cm
+robotDiameter = 2*9 + 5; % robot diameter in cm
 fieldSize = [1200, 900]; % field dimensions in cm
 fieldCoordinates = [fieldSize(1) fieldSize(2); ...
     -fieldSize(1) fieldSize(2); -fieldSize(1) -fieldSize(2); ...
@@ -17,15 +17,29 @@ startOrientationAngle = rand(1,1)*2*pi; % 0-2pi
 endOrientationAngle = rand(1,1)*2*pi;
 v0 = struct('amp',100,'theta',startOrientationAngle);
 
+% Coordinates so the robot won't go out of the field
+safetyMargin = 100;
+nStep = 10;
+xL = (-fieldSize(1)/2)*ones(nStep+1,1)-safetyMargin;
+xR = (fieldSize(1)/2)*ones(nStep+1,1)+safetyMargin;
+xT = -fieldSize(1)/2:fieldSize(1)/nStep:fieldSize(1)/2;
+xB = xT;
+yL = (-fieldSize(2)/2):fieldSize(2)/nStep:(fieldSize(2)/2);
+yR = yL;
+yT = (fieldSize(2)/2)*ones(nStep+1,1)+safetyMargin;
+yB = (-fieldSize(2)/2)*ones(nStep+1,1)-safetyMargin;
+
+safetyCoordinates = [xL yL'; xT' yT; xR yR'; xB' yB];
+
 % Generate objects and start/end point (is received from world in real code)
 nObjects = 15; % used for testing stuff
 obj = [rand(nObjects,1)*(fieldSize(1)/2) rand(nObjects,1)*(fieldSize(2)/2)];
 ptStart = fieldSize.*(rand(1,2)-0.5);
 ptEnd = fieldSize.*(rand(1,2)-0.5);
-ptObject = [ptStart; ptEnd; fieldCoordinates; obj];
+ptObject = [ptStart; ptEnd; safetyCoordinates; obj];
 m = randi([-1 1], nObjects,2); % generate random -1 1 matrix
 m(~m) = 1; % turn zeros into 1
-ptObject(7:end,:) = ptObject(7:end,:).*m; % multiply so it's not only positive
+ptObject((2+length(safetyCoordinates)+1):end,:) = ptObject((2+length(safetyCoordinates)+1):end,:).*m; % multiply so it's not only positive
 
 % Set
 [nObjects,~]=size(ptObject); % this one should be used for real stuff
@@ -66,7 +80,7 @@ obst = struct('x',ptObject(:,1),'y',ptObject(:,2),'radius',robotDiameter*ones(nO
 figure(1)
 set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
 plotter(allComb, center, path, ptObject, curve, v0, nObjects, robotDiameter, fieldSize, ptStart, startOrientationAngle, endOrientationAngle, ptEnd)
-axis([-fieldSize(1) fieldSize(1), -fieldSize(2) fieldSize(2)]*1.1/2)
+axis([-fieldSize(1) fieldSize(1), -fieldSize(2) fieldSize(2)]*0.7)
 plot(startCP(1), startCP(2), 'm*')
 plot(endCP(1), endCP(2),'m*')
 
