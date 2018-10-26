@@ -31,6 +31,20 @@ plot([-fieldSize(1)/2 fieldSize(1)/2],[0 0],'w-','linewidth',2);
 % Center arc
 viscircles([0 0],100,'color','w');
 
+% Goal
+goalLength = 120;
+goalWidth = 20;
+goalCoordinates = [-fieldSize(1)/2 goalLength/2; -fieldSize(1)/2-goalWidth goalLength/2; ...
+    -fieldSize(1)/2-goalWidth -goalLength/2; -fieldSize(1)/2 -goalLength/2];
+k = 2;
+for i = 1:length(goalCoordinates(:,1))-1
+    plot([goalCoordinates(i,1); goalCoordinates(k,1)], [goalCoordinates(i,2); ...
+        goalCoordinates(k,2)],'color',[1 0.5 0],'linestyle','-','linewidth',2);
+    plot([goalCoordinates(i,1); goalCoordinates(k,1)]*-1, [goalCoordinates(i,2); ...
+        goalCoordinates(k,2)]*-1,'color',[1 0.5 0],'linestyle','-','linewidth',2);
+    k = k + 1;
+end
+
 %% Lines
 for i = 1:length(allComb(:,1))
     n1 = allComb(i,2);
