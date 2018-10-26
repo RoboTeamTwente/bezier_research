@@ -3,7 +3,7 @@ function plotter(allComb, center, path, ptObject, curve, v0, nObjects, objectRad
 hold on
 
 %% Field
-rectangle('Position',[-fieldSize(1)/2, -fieldSize(2)/2, fieldSize(1), fieldSize(2)],'linewidth',5,'EdgeColor',[0 0.6 0],'FaceColor',[0 1 0 0.3]);
+rectangle('Position',[-fieldSize(1)/2, -fieldSize(2)/2, fieldSize(1), fieldSize(2)],'linewidth',5,'FaceColor',[0 1 0 0.3]);
 rectangle('position',[-fieldSize(1)/2-30, -fieldSize(2)/2-30, fieldSize(1)+60, fieldSize(2)+60], 'linewidth',2,'edgecolor','k');
 
 %% Field lines
@@ -44,6 +44,8 @@ for i = 1:length(goalCoordinates(:,1))-1
         goalCoordinates(k,2)]*-1,'color',[1 0.5 0],'linestyle','-','linewidth',2);
     k = k + 1;
 end
+
+rectangle('Position',[-fieldSize(1)/2, -fieldSize(2)/2, fieldSize(1), fieldSize(2)], 'linewidth',5,'EdgeColor',[0 0.6 0]);
 
 %% Lines
 for i = 1:length(allComb(:,1))
