@@ -11,18 +11,14 @@ function [allComb, center, startOrientationCP, endOrientationCP] = voronoiPlanni
 % allComb = matrix in which all points that are connected in the Voronoi
 % diagram are put. 1 row = 1 combination of 2 points.
 
-% Merge objects if 2 robots are 3*diameter near to each other
-% ptObject = mergeObjects(ptObject, nObjects, robotDiameter);
-% [nObjects,~] = size(ptObject);
-
 % All triangles
 triangleCombinations = possibleCombinations(1:nObjects,3); 
 
-%% Compute circumcircles
+% Compute circumcircles
 [nCombinations,~] = size(triangleCombinations);
 [center, radius] = createCircumcircles(triangleCombinations, ptObject, nCombinations);
 
-%% Receive delaunay points + combinations
+% Receive delaunay points + combinations
 [validCenter, validCombinations] = makeDelaunay(ptObject, center, radius, nCombinations, nObjects, triangleCombinations);
 [nCombinations,~] = size(validCenter);
 center = [(1:nCombinations)' validCenter];
@@ -47,7 +43,7 @@ end
 allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
 [nCombinations,~] = size(allComb);
 
-%% Determine orientation control point(s)
+% Determine orientation control point(s)
 % Calculate angles between start point and connected centers
 [angleStart] = getAngles(1, ptStart, allComb, center, nCombinations);
 [startOrientationCP] = getOrientationCP(angleStart, startOrientationAngle, center, ptStart);
@@ -84,12 +80,6 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
 
         end
     end
-
-%     function area = shoelace(corners) % shoelace formula
-%         area = 0.5*(corners(1,1) * corners(2,2) + corners(2,1) * corners(3,2) + ...
-%             corners(3,1) * corners(1,2) - corners(2,1) * corners(1,2) - ...
-%             corners(3,1) * corners(2,2) - corners(1,1) * corners(3,2));
-%     end
 
     function [a, b, c] = lineFromPoints(A, B)
         a = B(1,2) - A(1,2);
@@ -150,42 +140,6 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
     combs = combs(any(combs,2),:);
     end
 
-%     function [cx, cy, nLines] = makeLines(nCombinations, adjacentTriangles, validCenter, radiusx, radiusy)
-%     cx = [];
-%     cy = [];
-%     p = 1;
-%     for i = 1:nCombinations
-%         for k = 2:4
-%             if adjacentTriangles(i,k) ~= 0
-%                 cx(1:2,p) = [validCenter(adjacentTriangles(i,1),1); validCenter(adjacentTriangles(i,k),1)];
-%                 cy(1:2,p) = [validCenter(adjacentTriangles(i,1),2); validCenter(adjacentTriangles(i,k),2)];
-%                 p = p + 1;
-%             end
-%         end
-%     end
-%     [~,n] = size(radiusx);
-%     for i = 1:n
-%         cx(1:2,p) = radiusx(1:2,i);
-%         cy(1:2,p) = radiusy(1:2,i);
-%         p = p + 1;
-%     end
-% 
-%     [~,nLines] = size(cx);
-%     for i = 1:nLines
-%         for k = 1:nLines
-%             if k ~= i 
-%                 if (cx(1,k) == cx(1,i)) && (cx(2,k) == cx(2,i)) || (cx(1,k) ...
-%                         == cx(2,i) && cx(2,k) == cx(1,i))
-%                     cx(:,k) = [0 0];
-%                     cy(:,k) = [0 0];
-%                 end
-%             end
-%         end
-%     end
-%     cx(:,~any(cx,1)) = [];
-%     cy(:,~any(cy,1)) = [];
-%     end
-
     function adjacentCenter = findAdjacentCenter(nCombinations, validCombinations)
     newCombinations = ones(nCombinations, 4);
     for i = 1:nCombinations
@@ -243,22 +197,6 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
         end
     end
     end
-
-%     function [ptObject] = mergeObjects(ptObject, nObjects, robotDiameter)
-%     for i = 3:nObjects % start at 3 so the start & end point are not used
-%         for k = 3:nObjects
-%             if i ~= k
-%                 dist = sqrt((ptObject(i,1)-ptObject(k,1))^2+(ptObject(i,2)-ptObject(k,1))^2);
-%                 if dist <= 3*robotDiameter 
-%                     coord = [(ptObject(i,1)+ptObject(k,1))/2 (ptObject(i,2)+ptObject(k,2))/2];
-%                     ptObject(i,:) = coord;
-%                     ptObject(k,:) = [0 0];
-%                 end
-%             end
-%         end
-%     end
-%     ptObject = ptObject(any(ptObject,2),:); 
-%     end
 
     function [angles] = getAngles(inp, pt, allComb, center, nCombinations)
     angles = [];
