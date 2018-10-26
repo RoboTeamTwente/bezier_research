@@ -4,6 +4,7 @@ hold on
 
 %% Field
 rectangle('Position',[-fieldSize(1)/2, -fieldSize(2)/2, fieldSize(1), fieldSize(2)],'linewidth',5,'EdgeColor',[0 0.6 0],'FaceColor',[0 1 0 0.3]);
+rectangle('position',[-fieldSize(1)/2-30, -fieldSize(2)/2-30, fieldSize(1)+60, fieldSize(2)+60], 'linewidth',2,'edgecolor','k');
 
 %% Field lines
 % Penalty area
@@ -46,7 +47,7 @@ plot(curve(1,:),curve(2,:),'-m','linewidth',2);
 
 %% Points
 plot(ptObject(:,1), ptObject(:,2),'xr');
-viscircles([ptObject(:,1) ptObject(:,2)], objectRadius*ones(nObjects,1));
+viscircles([ptObject(:,1) ptObject(:,2)], objectRadius*ones(length(ptObject(:,1)),1));
 plot(center(:,2),center(:,3),'.b','MarkerSize',15);
 plot(center(end-1,2),center(end-1,3),'.g','MarkerSize',25); % start
 plot(center(end,2),center(end,3),'.r','MarkerSize',25); % end
