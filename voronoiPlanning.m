@@ -1,4 +1,4 @@
-function [allComb, center, startOrientationCP, endOrientationCP] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, robotDiameter, startOrientationAngle, endOrientationAngle)
+function [allComb, center, startOrientationCP, endOrientationCP] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, robotDiameter, startOrientationAngle, endOrientationAngle, fieldCoordiantes, penaltyCoordinates)
 % Generates a Voronoi diagram
 %
 % INPUTS
@@ -48,7 +48,11 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
 [angleStart] = getAngles(1, ptStart, allComb, center, nCombinations);
 [startOrientationCP] = getOrientationCP(angleStart, startOrientationAngle, center, ptStart);
 [angleEnd] = getAngles(2, ptEnd, allComb, center, nCombinations);
-[endOrientationCP, linePoints, adjacentAngle] = getOrientationCP(angleEnd, endOrientationAngle, center, ptEnd);
+[endOrientationCP] = getOrientationCP(angleEnd, endOrientationAngle, center, ptEnd);
+
+% Remove centers that are outside of the field or in the defence area
+[center] = removeIfInDefenceArea(center, penaltyCoordinates);
+% [center] = removeIfOutsideField(center, fieldCoordinates);
 
 %% Functions
     function [center, radius] = createCircumcircles(combs, ptObject, nCombinations)
@@ -99,7 +103,6 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
     function [x, y] = lineLineIntersection(a, b, c, e, f, g)
         determinant = a*f - e*b; 
         if determinant == 0 
-            disp('Lines are parallel, cannot calculate center')
             x = 0; y = 0;
         else
             x = (f*c - b*g)/determinant; 
@@ -234,7 +237,7 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
     end     
     end
 
-    function [orientationCP, linePoints, adjacentAngle] = getOrientationCP(angles, oAngle, center, pt)
+    function [orientationCP] = getOrientationCP(angles, oAngle, center, pt)
     greaterAngle = [];
     smallerAngle = [];
     p = 1; q = 1;
@@ -276,5 +279,17 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
     x = (d-b)/(a-c);
     y = a * x + b;
     orientationCP = [x y];
+    end
+
+    function [center] = removeIfInDefenceArea(center, penaltyCoordinates)
+        for i = 1:length(center(:,1))
+            if ((center(i,2) > penaltyCoordinates(1,1) && center(i,2) < penaltyCoordinates(3,1)) || ...
+                (center(i,2) > penaltyCoordinates(4,1)*-1 && center(i,2) < penaltyCoordinates(2,1)*-1)) && ...
+                ((center(i,3) > penaltyCoordinates(1,2) && center(i,3) < penaltyCoordinates(2,2)) || ...
+                (center(i,3) > penaltyCoordinates(1,2) && center(i,3) < penaltyCoordinates(2,2)))
+                center(i,:) = [0 0 0];
+            end
+        end
+        center = center(any(center,2),:);
     end
 end
