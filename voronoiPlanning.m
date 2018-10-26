@@ -1,4 +1,4 @@
-function [allComb, center, startOrientationCP, endOrientationCP] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, robotDiameter, startOrientationAngle, endOrientationAngle, fieldCoordiantes, penaltyCoordinates)
+function [allComb, center, startOrientationCP, endOrientationCP] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, robotDiameter, startOrientationAngle, endOrientationAngle, fieldCoordinates, penaltyCoordinates)
 % Generates a Voronoi diagram
 %
 % INPUTS
