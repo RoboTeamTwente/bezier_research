@@ -1,4 +1,4 @@
-function [allComb, center, startOrientationCP, endOrientationCP] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, robotDiameter, startOrientationAngle, endOrientationAngle, fieldCoordiantes, penaltyCoordinates)
+function [allComb, center, startOrientationCP, endOrientationCP] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, robotDiameter, startOrientationAngle, endOrientationAngle, fieldCoordinates, penaltyCoordinates)
 % Generates a Voronoi diagram
 %
 % INPUTS
@@ -52,7 +52,7 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
 
 % Remove centers that are outside of the field or in the defence area
 [center] = removeIfInDefenceArea(center, penaltyCoordinates);
-% [center] = removeIfOutsideField(center, fieldCoordinates);
+[center] = removeIfOutOfField(center, fieldCoordinates);
 
 %% Functions
     function [center, radius] = createCircumcircles(combs, ptObject, nCombinations)
@@ -287,6 +287,16 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
                 (center(i,2) > penaltyCoordinates(4,1)*-1 && center(i,2) < penaltyCoordinates(2,1)*-1)) && ...
                 ((center(i,3) > penaltyCoordinates(1,2) && center(i,3) < penaltyCoordinates(2,2)) || ...
                 (center(i,3) > penaltyCoordinates(1,2) && center(i,3) < penaltyCoordinates(2,2)))
+                center(i,:) = [0 0 0];
+            end
+        end
+        center = center(any(center,2),:);
+    end
+
+    function [center] = removeIfOutOfField(center, fieldCoordinates)
+        for i = 1:length(center(:,1))
+            if (center(i,2) > fieldCoordinates(1,1)) || (center(i,2) < fieldCoordinates(2,1)) || ...
+                    (center(i,3) > fieldCoordinates(1,2)) || (center(i,3) < fieldCoordinates(3,2))
                 center(i,:) = [0 0 0];
             end
         end
