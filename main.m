@@ -1,6 +1,6 @@
 clear all; close all; clc;
 % MAIN CODE (pseudo style)
-getMovementData = true; % if true, get the velocity, acceleration and rotation of the path
+getMovementData = false; % if true, get the velocity, acceleration and rotation of the path
 
 % Get information from world_state
 % This is not possible now so everything is defined/generated
@@ -9,16 +9,24 @@ getMovementData = true; % if true, get the velocity, acceleration and rotation o
 %  - Field size [x, y]
 %  - Size of robot
 robotDiameter = 2*9 + 5; % robot diameter in cm
-fieldSize = [1200, 900]; % field dimensions in cm
-fieldCoordinates = [fieldSize(1) fieldSize(2); ...
-    -fieldSize(1) fieldSize(2); -fieldSize(1) -fieldSize(2); ...
-    fieldSize(1) -fieldSize(2)]/2;
 startOrientationAngle = rand(1,1)*2*pi; % 0-2pi
 endOrientationAngle = rand(1,1)*2*pi;
 v0 = struct('amp',100,'theta',startOrientationAngle);
 
+% Field dimensions
+fieldSize = [1200, 900]; % field dimensions in cm
+fieldCoordinates = [fieldSize(1) fieldSize(2); ...
+    -fieldSize(1) fieldSize(2); -fieldSize(1) -fieldSize(2); ...
+    fieldSize(1) -fieldSize(2)]/2;
+
+% Penalty area
+penaltyWidth = 120;
+penaltyLength = 240;
+penaltyCoordinates = [-fieldSize(1)/2 -penaltyLength/2; -fieldSize(1)/2 penaltyLength/2; ...
+    -fieldSize(1)/2 + penaltyWidth penaltyLength/2; -fieldSize(1)/2 + penaltyWidth -penaltyLength/2];
+
 % Coordinates so the robot won't go out of the field
-safetyMargin = 100;
+safetyMargin = 30;
 nStep = 5;
 xL = (-fieldSize(1)/2)*ones(nStep+1,1)-safetyMargin;
 xR = (fieldSize(1)/2)*ones(nStep+1,1)+safetyMargin;
@@ -48,7 +56,7 @@ ptObject((2+length(safetyCoordinates)+1):end,:) = ptObject((2+length(safetyCoord
 %  - Matrix with connected points in the Voronoi diagram
 %  - 6493 = start, 6494 = end
 %  - Change name function from voronoiPlanning to makeVoronoi
-[allComb, center, startCP, endCP] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, robotDiameter, startOrientationAngle, endOrientationAngle);
+[allComb, center, startCP, endCP] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, robotDiameter, startOrientationAngle, endOrientationAngle, fieldCoordinates, penaltyCoordinates);
 
 %% Get shortest path
 %  - Matrix (numberPathNodes-by-3) path = [ID, x, y]
