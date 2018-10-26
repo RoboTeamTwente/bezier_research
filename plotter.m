@@ -1,8 +1,34 @@
 function plotter(allComb, center, path, ptObject, curve, v0, nObjects, objectRadius, fieldSize, ptStart, startOrientationAngle, endOrientationAngle, ptEnd)
 % Plot all points and line segments for debugging purposes
 hold on
+
 %% Field
 rectangle('Position',[-fieldSize(1)/2, -fieldSize(2)/2, fieldSize(1), fieldSize(2)],'linewidth',5,'EdgeColor',[0 0.6 0],'FaceColor',[0 1 0 0.3]);
+
+%% Field lines
+% Penalty area
+penaltyWidth = 120;
+penaltyLength = 240;
+penaltyCoordinates = [-fieldSize(1)/2 -penaltyLength/2; -fieldSize(1)/2 penaltyLength/2; ...
+    -fieldSize(1)/2 + penaltyWidth penaltyLength/2; -fieldSize(1)/2 + penaltyWidth -penaltyLength/2];
+k = 3;
+for i = 2:length(penaltyCoordinates(:,1))
+    if k == 5
+        k = 1;
+    end
+    plot([penaltyCoordinates(i,1); penaltyCoordinates(k,1)], [penaltyCoordinates(i,2); ...
+        penaltyCoordinates(k,2)],'w-','linewidth',2);
+    plot([penaltyCoordinates(i,1); penaltyCoordinates(k,1)]*-1, [penaltyCoordinates(i,2); ...
+        penaltyCoordinates(k,2)]*-1,'w-','linewidth',2);
+    k = k + 1;
+end
+
+% Centerlines
+plot([0 0],[fieldSize(2)/2 -fieldSize(2)/2],'w-','linewidth',2);
+plot([-fieldSize(1)/2 fieldSize(1)/2],[0 0],'w-','linewidth',2);
+
+% Center arc
+viscircles([0 0],100,'color','w');
 
 %% Lines
 for i = 1:length(allComb(:,1))
@@ -24,16 +50,6 @@ viscircles([ptObject(:,1) ptObject(:,2)], objectRadius*ones(nObjects,1));
 plot(center(:,2),center(:,3),'.b','MarkerSize',15);
 plot(center(end-1,2),center(end-1,3),'.g','MarkerSize',25); % start
 plot(center(end,2),center(end,3),'.r','MarkerSize',25); % end
-% for i = 1:4
-%     if i == 4
-%         x = [ptObject(i,1); ptObject(1,1)];
-%         y = [ptObject(i,2); ptObject(1,2)];
-%     else
-%         x = [ptObject(i,1); ptObject(i+1,1)];
-%         y = [ptObject(i,2); ptObject(i+1,2)];
-%     end
-%     plot(x,y,'color',[0.5 0.5 0.5],'linestyle','--');
-% end
 orientationMargin = 100;
 h = orientationMargin * sin(startOrientationAngle);
 l = orientationMargin * cos(startOrientationAngle);
