@@ -1,4 +1,4 @@
-function [path] = findShortestPath(nodesIN, segments, startID, endID) 
+function [path] = findShortestPath(nodesIN, segments, startID, endID, v0, vf) 
 % findShortestPath  Find the shortest path through a set of connected points.
 %    > nodesIN:    list of nodes [(int)ID, (float)x, (float)y].
 %    > segments:   list of segments [(int)ID, (float)x, (float)y].
@@ -47,8 +47,22 @@ while queue(1) ~= endID % while the end node is not on top of the queue
         else 
             % place childID at the correct place in the queue
             for j = 1:length(queue)
-                childCost = nodes(childID).dist_start + nodes(childID).dist_end;
-                queueNodeCost = nodes(queue(j)).dist_start + nodes(queue(j)).dist_end;
+                % Calculate cost
+                childDirectionCost = 1;
+                queueNodeDirectionCost = 1;
+                if parentID == startID
+                    % Take into account v0 at the starting node
+                    startToChildNode = [nodes(childID).x, nodes(childID).y] - [nodes(startID).x, nodes(startID).y];
+                    startToQueueNode = [nodes(queue(j)).x, nodes(queue(j)).y] - [nodes(startID).x, nodes(startID).y];
+                    angleToChildNode = v0.theta-atan2(startToChildNode(2),startToChildNode(1));
+                    angleToQueueNode = v0.theta-atan2(startToQueueNode(2),startToQueueNode(1));
+                    childDirectionCost = sin(angleToChildNode/2)^2; % if angle is 0, result is 0. if angle is pi, result is 1
+                    queueNodeDirectionCost = sin(angleToQueueNode/2)^2; % if angle is 0, result is 0. if angle is pi, result is 1
+                end
+                    
+                childCost = (nodes(childID).dist_start + nodes(childID).dist_end) * childDirectionCost;
+                queueNodeCost = (nodes(queue(j)).dist_start + nodes(queue(j)).dist_end) * queueNodeDirectionCost;
+                
                 if childCost < queueNodeCost
                     if j == 1
                         queue = [childID, queue];
