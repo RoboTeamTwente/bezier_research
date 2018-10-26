@@ -90,12 +90,13 @@ obst = struct('x',ptObject(:,1),'y',ptObject(:,2),'radius',robotDiameter*ones(nO
 [curve,movementData] = finishBezierCurve(path,obst,Q,getMovementData,v0);
 
 %% Show result
-figure(1)
-%set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
+rowsToNotUse = 1:length(safetyCoordinates(:,1));
+ptObject(rowsToNotUse,:) = [];
+figure(2)
+set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
 plotter(allComb, center, path, ptObject, curve, v0, nObjects, robotDiameter, fieldSize, ptStart, startOrientationAngle, endOrientationAngle, ptEnd)
 axis([-fieldSize(1) fieldSize(1), -fieldSize(2) fieldSize(2)]*0.7)
-plot(startCP(1), startCP(2), 'm*')
-plot(endCP(1), endCP(2),'m*')
+plot(endCP(1), endCP(2),'.','color',[1 0.5 0],'markersize',25)
 
 % figure(2)
 % showMovementData(movementData)
