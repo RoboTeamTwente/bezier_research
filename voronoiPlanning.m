@@ -1,4 +1,4 @@
-function [allComb, center, startOrientationCP, endOrientationCP] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, robotDiameter, startOrientationAngle, endOrientationAngle, fieldCoordinates, penaltyCoordinates)
+function [allComb, center, startOrientationCP, endOrientationCP, validCenter] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, robotDiameter, startOrientationAngle, endOrientationAngle, fieldCoordinates, penaltyCoordinates)
 % Generates a Voronoi diagram
 %
 % INPUTS
@@ -12,13 +12,13 @@ function [allComb, center, startOrientationCP, endOrientationCP] = voronoiPlanni
 % diagram are put. 1 row = 1 combination of 2 points.
 
 % All triangles
-triangleCombinations = possibleCombinations(1:nObjects,3); 
+triangleCombinations = possibleCombinations(1:41,3); 
 
-% Compute circumcircles
+%% Compute circumcircles
 [nCombinations,~] = size(triangleCombinations);
 [center, radius] = createCircumcircles(triangleCombinations, ptObject, nCombinations);
 
-% Receive delaunay points + combinations
+%% Receive delaunay points + combinations
 [validCenter, validCombinations] = makeDelaunay(ptObject, center, radius, nCombinations, nObjects, triangleCombinations);
 [nCombinations,~] = size(validCenter);
 center = [(1:nCombinations)' validCenter];
@@ -132,8 +132,8 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
     temp = center;
     for i = 1:nCombinations
         for k = 1:nObjects
-            distance = sqrt((center(i,1)-ptObject(k,1))^2+(center(i,2)-ptObject(k,2))^2);
-            if round(distance,4) < round(abs(radius(i)),4)
+            distance = sqrt((center(i,1) - ptObject(k,1))^2 + (center(i,2) - ptObject(k,2))^2);
+            if (distance < radius(i)) &&  (abs(distance - radius(i)) > 0.0001)
                 temp(i,:) = [0 0];
                 combs(i,:) = [0 0 0];
             end
