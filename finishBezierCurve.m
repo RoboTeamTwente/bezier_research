@@ -1,4 +1,4 @@
-function [curve,movementData] = finishBezierCurve(path,obst,Q,getMovementData)
+function [curve,movementData] = finishBezierCurve(path,obst,Q,getMovementData,endCP)
 % Takes in a path with points and spits out a smooth curve passed these
 % points. This function assumes you already processed the first 3 points
 % -> obst:  list containing obstacles
@@ -96,6 +96,8 @@ if length(pts(:,1)) >= pStartCount
         end
     end
 end
+endCP = Q(end,:) - (endCP-Q(end,:));
+Q = [Q(1:end-1,:); endCP; Q(end,:)]; % Add control point for end orientation
 saveQ{curveNum} = Q;
 nControlPoints = nControlPoints + length(Q(:,1)) - curveNum + 1; % don't count points twice
 
