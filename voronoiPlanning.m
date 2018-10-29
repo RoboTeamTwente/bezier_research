@@ -48,8 +48,8 @@ allComb = [(1:length(allComb(:,1)))', allComb]; % enumerate allComb
 [angleStart] = getAngles(1, ptStart, allComb, center, nCombinations);
 [startOrientationCP] = getOrientationCP(angleStart, startOrientationAngle, center, ptStart);
 [angleEnd] = getAngles(2, ptEnd, allComb, center, nCombinations);
+endOrientationAngle = mod(endOrientationAngle+pi,2*pi); % rotate 180 degrees
 [endOrientationCP] = getOrientationCP(angleEnd, endOrientationAngle, center, ptEnd);
-
 % Remove centers that are outside of the field or in the defence area
 [center] = removeIfInDefenceArea(center, penaltyCoordinates);
 [center] = removeIfOutOfField(center, fieldCoordinates);
