@@ -66,7 +66,7 @@ end
 
 %% Add weights to Voronoi points
 %  - 6493 = start, 6494 = end
-[center_weights] = calcWeights(allComb, center, v0, vf);
+[seg_weights] = calcSegmentWeights(allComb, center, v0, vf);
 
 %% Get shortest path
 %  - Matrix (numberPathNodes-by-3) path = [ID, x, y]
@@ -75,7 +75,7 @@ if isempty(find(allComb(:,2)==6493,1)) || isempty(find(allComb(:,2)==6494,1))
     disp('No connections to start and/or end point...');
     path = [6493, ptStart; 6494, ptEnd];
 else
-    [path] = findShortestPath(center, allComb, center(end-1,1), center(end,1),center_weights);
+    [path] = findShortestPath(center, allComb, center(end-1,1), center(end,1),seg_weights);
 end
 
 %% Create Bezier Curve
@@ -101,7 +101,8 @@ figure(2)
 %set(gcf,'Position',[1367 -255 1280 1026]) % to put figure on second monitor, selina laptop
 plotter(allComb, center, path, ptObject, curve, v0, nObjects, robotDiameter, fieldSize, ptStart, startOrientationAngle, endOrientationAngle, ptEnd)
 axis([-fieldSize(1) fieldSize(1), -fieldSize(2) fieldSize(2)]*0.7)
-plot(endCP(1), endCP(2),'.','color',[1 0.5 0],'markersize',25)
+ball = curve(:,end)' - 50*(endCP-curve(:,end)')/norm(endCP-curve(:,end)');
+plot(ball(1), ball(2),'.','color',[1 0.5 0],'markersize',25)
 
 if getMovementData
     figure
