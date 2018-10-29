@@ -1,4 +1,4 @@
-clear all; close all; clc;
+clear all; clf; clc;
 % MAIN CODE (pseudo style)
 getMovementData = false; % if true, get the velocity, acceleration and rotation of the path
 
@@ -59,6 +59,11 @@ ptObject((2+length(safetyCoordinates)+1):end,:) = ptObject((2+length(safetyCoord
 %  - Change name function from voronoiPlanning to makeVoronoi
 [allComb, center, startCP, endCP] = voronoiPlanning(nObjects, ptObject, ptStart, ptEnd, robotDiameter, startOrientationAngle, endOrientationAngle, fieldCoordinates, penaltyCoordinates);
 
+if isempty(find(center(:,1)==6494,1))
+    disp('No valid end point... Try again');
+    return;
+end
+
 %% Add weights to Voronoi points
 %  - 6493 = start, 6494 = end
 [center_weights] = calcWeights(allComb, center, v0, vf);
@@ -87,7 +92,7 @@ nObjects = nObjects - 2;
 
 obst = struct('x',ptObject(:,1),'y',ptObject(:,2),'radius',robotDiameter*ones(nObjects,1));
 [Q] = createBezierCurve(path,v0,obst,startCP);
-[curve,movementData] = finishBezierCurve(path,obst,Q,getMovementData);
+[curve,movementData] = finishBezierCurve(path,obst,Q,getMovementData,endCP);
 
 %% Show result
 rowsToNotUse = 1:length(safetyCoordinates(:,1));
@@ -99,8 +104,6 @@ axis([-fieldSize(1) fieldSize(1), -fieldSize(2) fieldSize(2)]*0.7)
 plot(endCP(1), endCP(2),'.','color',[1 0.5 0],'markersize',25)
 
 if getMovementData
-    figure(2)
+    figure
     showMovementData(movementData)
 end
-
-% do finishBezierCurve
