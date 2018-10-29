@@ -96,7 +96,7 @@ if length(pts(:,1)) >= pStartCount
         end
     end
 end
-endCP = Q(end,:) - (endCP-Q(end,:));
+%endCP = Q(end,:) - (endCP-Q(end,:));
 Q = [Q(1:end-1,:); endCP; Q(end,:)]; % Add control point for end orientation
 saveQ{curveNum} = Q;
 nControlPoints = nControlPoints + length(Q(:,1)) - curveNum + 1; % don't count points twice
