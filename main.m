@@ -41,7 +41,7 @@ yB = (-fieldSize(2)/2)*ones(nStep+1,1)-safetyMargin;
 safetyCoordinates = [xL yL'; xT' yT; xR yR'; xB' yB];
 
 % Generate objects and start/end point (is received from world in real code)
-nObjects = 15; % used for testing stuff
+nObjects = 5; % used for testing stuff
 obj = [rand(nObjects,1)*(fieldSize(1)/2) rand(nObjects,1)*(fieldSize(2)/2)];
 ptStart = fieldSize.*(rand(1,2)-0.5);
 ptEnd = fieldSize.*(rand(1,2)-0.5);
@@ -66,7 +66,7 @@ end
 
 %% Add weights to Voronoi points
 %  - 6493 = start, 6494 = end
-[seg_weights] = calcSegmentWeights(allComb, center, v0, vf);
+[seg_weights] = calcSegmentWeights(allComb, center, v0, vf, ptObject, robotDiameter);
 
 %% Get shortest path
 %  - Matrix (numberPathNodes-by-3) path = [ID, x, y]
