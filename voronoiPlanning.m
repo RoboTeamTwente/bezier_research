@@ -12,7 +12,7 @@ function [allComb, center, startOrientationCP, endOrientationCP, validCenter] = 
 % diagram are put. 1 row = 1 combination of 2 points.
 
 % All triangles
-triangleCombinations = possibleCombinations(1:41,3); 
+triangleCombinations = possibleCombinations(1:nObjects,3); 
 
 %% Compute circumcircles
 [nCombinations,~] = size(triangleCombinations);
